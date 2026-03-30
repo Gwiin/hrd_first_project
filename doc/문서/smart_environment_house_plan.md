@@ -4,10 +4,10 @@
 
 작업 전에 아래 문서를 먼저 함께 확인한다.
 
-- [협업 가이드](/Users/jeong-gwiin/Desktop/study/doc/smart_house_team_workflow.md)
-- [노드 A 개발 문서](/Users/jeong-gwiin/Desktop/study/doc/node_a_environment_sensor_guide.md)
-- [노드 B 개발 문서](/Users/jeong-gwiin/Desktop/study/doc/node_b_actuator_control_guide.md)
-- [노드 C 개발 문서](/Users/jeong-gwiin/Desktop/study/doc/node_c_central_manager_guide.md)
+- [협업 가이드](./smart_house_team_workflow.md)
+- [노드 A 개발 문서](./node_a_environment_sensor_guide.md)
+- [노드 B 개발 문서](./node_b_actuator_control_guide.md)
+- [노드 C 개발 문서](./node_c_central_manager_guide.md)
 
 ## 1. 프로젝트 개요
 
