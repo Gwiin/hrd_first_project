@@ -19,3 +19,22 @@
 ---
 
 
+작업 전에 하고 마지막에 최신화
+git checkout develop
+git pull origin develop
+git checkout HJY
+git merge develop
+
+2) node b 만 
+git checkout develop
+git pull origin develop
+git checkout HJY -- node_b
+git add node_b
+git commit -m "Update node_b"
+git push origin develop
+
+1) 전체 작업
+git checkout HJY
+git add .
+git commit -m "Save full working state"
+git push origin HJY
