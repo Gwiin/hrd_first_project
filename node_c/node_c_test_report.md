@@ -13,8 +13,7 @@
 - 중앙 제어 로직 호스트 실행
 - Pico 2 W 펌웨어 빌드
 - 로컬 MQTT 브로커 동작 확인
-
-실보드 없이 진행했기 때문에 `실제 Pico 2 W에서 Wi-Fi 연결 후 MQTT 송수신` 자체는 이번 보고서 범위에 포함되지 않는다.
+- 실제 Pico 2 W 실보드 MQTT 송수신 확인
 
 ## 2. Executed Tests
 
@@ -116,9 +115,58 @@ ls -lh /tmp/node_c_test_build/node_c.elf /tmp/node_c_test_build/node_c.bin
 
 - `PASS`
 
+### 2-4. Real Pico 2 W MQTT test
+
+실행 환경:
+
+- 실제 `Pico 2 W` 보드 사용
+- Wi-Fi: `bindsoft`
+- MQTT broker: `163.152.213.111:1883`
+
+PC에서 구독:
+
+```bash
+mosquitto_sub -h 163.152.213.111 -t "house/#" -v
+```
+
+PC에서 환경값 발행:
+
+```bash
+mosquitto_pub -h 163.152.213.111 -t house/env -m "light=350,temp=26.0,humidity=55.0"
+mosquitto_pub -h 163.152.213.111 -t house/env -m "light=250,temp=29.5,humidity=72.0"
+```
+
+실제 확인된 결과:
+
+```txt
+house/status/nodeC mode=AUTO,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE
+house/heartbeat/nodeC alive
+house/env light=350,temp=26.0,humidity=55.0
+house/status/nodeC mode=AUTO,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE
+house/env light=250,temp=29.5,humidity=72.0
+house/cmd/light ON
+house/cmd/window OPEN
+house/status/nodeC mode=AUTO,light=250,temp=29.5,humidity=72.0,lamp=ON,window=OPEN
+house/heartbeat/nodeC alive
+```
+
+실보드 기준 검증 완료 항목:
+
+- Pico 2 W가 Wi-Fi에 실제 연결됨
+- MQTT broker에 실제 연결됨
+- `house/heartbeat/nodeC` 발행 확인
+- `house/status/nodeC` 발행 확인
+- `house/env` 수신 확인
+- 상태 변화 시 `house/cmd/light`, `house/cmd/window` 발행 확인
+- AUTO 제어 로직이 실보드에서 정상 동작함
+
+판정:
+
+- `PASS`
+
 ## 3. Final Result
 
-현재 로컬에서 검증 가능한 범위 기준으로 `node_c`는 정상 동작 상태로 판단했다.
+현재 로컬 및 실보드에서 검증 가능한 범위 기준으로 `node_c`는 정상 동작 상태로 판단했다.
 
 확인 완료:
 
@@ -129,16 +177,17 @@ ls -lh /tmp/node_c_test_build/node_c.elf /tmp/node_c_test_build/node_c.bin
 - 상태 발행 정상
 - Pico 2 W 대상 펌웨어 빌드 정상
 - 로컬 MQTT 브로커 동작 정상
+- 실제 Pico 2 W MQTT 송수신 정상
+- 실제 Pico 2 W AUTO 제어 정상
 
 ## 4. Remaining Real-device Test
 
 실보드에서 최종 확인이 필요한 항목:
 
-- Pico 2 W가 `bindsoft` Wi-Fi에 실제 연결되는지
-- `163.152.213.111:1883` 브로커에 실제 접속되는지
-- PC에서 `mosquitto_sub -h 163.152.213.111 -t "house/#" -v`로 토픽이 보이는지
-- 실시간 센서값 또는 수동 명령에 맞춰 MQTT 토픽이 기대대로 올라오는지
+- UART 수동 명령(`mode manual`, `light on`, `window open`) 실보드 확인
+- 실제 `nodeB`와의 통합 확인
+- 실제 `nodeA`와의 통합 확인
 
 ## 5. Conclusion
 
-`node_c`는 현재 단계에서 혼자 개발 및 단독 검증이 가능한 상태이며, 로컬 테스트 기준으로는 이상 없이 동작했다.
+`node_c`는 현재 단계에서 단독 개발 및 실보드 단독 검증까지 완료된 상태이며, 핵심 기능은 이상 없이 동작했다.

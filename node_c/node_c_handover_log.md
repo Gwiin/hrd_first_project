@@ -6,7 +6,7 @@
 
 ## 1. 현재까지 진행한 작업 요약
 
-`node_c` 중앙관리노드의 1차 구현과 로컬 검증을 완료했다.
+`node_c` 중앙관리노드의 1차 구현, 로컬 검증, 실보드 단독 검증을 완료했다.
 
 완료된 항목:
 
@@ -22,6 +22,8 @@
 - `config.h` 기반 팀 공용 설정 방식 추가
 - Pico 2 W 대상 빌드 성공 확인
 - 로컬 스모크 테스트 문서화 완료
+- 실보드 MQTT 단독 테스트 완료
+- 실보드 AUTO 제어 테스트 완료
 
 ## 2. 주요 파일 구조
 
@@ -164,20 +166,34 @@
 
 - `PASS`
 
+### 4-4. 실제 Pico 2 W 단독 테스트
+
+검증 완료 항목:
+
+- Wi-Fi 실제 연결
+- MQTT broker 실제 연결
+- `house/heartbeat/nodeC` 발행
+- `house/status/nodeC` 발행
+- `house/env` 수신
+- 상태 변화 시 `house/cmd/light`, `house/cmd/window` 발행
+- AUTO 제어 로직 실보드 검증
+
+결과:
+
+- `PASS`
+
 상세는 [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md) 참고
 
 ## 5. 아직 남은 작업
 
-내일 실제 보드가 도착하면 아래 작업이 필요하다.
+이제 남은 작업은 주로 통합 테스트와 보완 작업이다.
 
 ### 5-1. 실보드 업로드 및 연결 확인
 
 확인 필요:
 
-- Pico 2 W에 펌웨어 업로드
-- USB 시리얼 로그 확인
-- `bindsoft` Wi-Fi 연결 성공 여부 확인
-- `163.152.213.111:1883` MQTT broker 연결 성공 여부 확인
+- UART 수동 명령 처리 실보드 확인
+- USB 시리얼 로그 포맷 최종 점검
 
 ### 5-2. 실보드 MQTT 송수신 확인
 
@@ -189,20 +205,15 @@ mosquitto_sub -h 163.152.213.111 -t "house/#" -v
 
 확인 항목:
 
-- `house/mode`
-- `house/status/nodeC`
-- `house/heartbeat/nodeC`
-- 환경 데이터 입력 시 `house/cmd/light`, `house/cmd/window`
+- `MANUAL` 모드 명령 테스트
+- `nodeA`, `nodeB`와 통합 시 실제 토픽 흐름 재확인
 
 ### 5-3. 단독 테스트
 
 보드가 `node_c` 하나만 있어도 가능한 테스트:
 
-- 부팅 로그 확인
-- Wi-Fi 연결 로그 확인
-- MQTT 연결 로그 확인
 - UART 수동 명령 입력
-- 데모 모드 또는 외부 MQTT publish로 AUTO 동작 확인
+- 외부 MQTT publish로 AUTO 동작 재확인
 
 ### 5-4. 이후 개선 후보
 
@@ -217,14 +228,11 @@ mosquitto_sub -h 163.152.213.111 -t "house/#" -v
 
 ## 6. 내일 보드 도착 후 추천 작업 순서
 
-1. `node_c` 빌드
-2. Pico 2 W에 업로드
-3. USB 시리얼 로그 확인
-4. PC에서 `mosquitto_sub -h 163.152.213.111 -t "house/#" -v`
-5. 보드가 `house/mode`, `house/status/nodeC`, `house/heartbeat/nodeC` 발행하는지 확인
-6. PC에서 `house/env`에 가짜 센서값 publish
-7. `node_c`가 `house/cmd/light`, `house/cmd/window`를 발행하는지 확인
-8. UART로 `mode manual`, `light on`, `window open` 테스트
+1. UART로 `mode manual`, `light on`, `window open` 테스트
+2. `nodeA`와 연결해서 실제 센서값 연동 테스트
+3. `nodeB`와 연결해서 실제 액추에이터 명령 연동 테스트
+4. 세 노드 통합 테스트
+5. 필요하면 로그/재연결 처리 보완
 
 ## 7. 주의할 점
 
@@ -232,8 +240,8 @@ mosquitto_sub -h 163.152.213.111 -t "house/#" -v
 - 현재 사용 예정 IP는 `163.152.213.111`
 - Windows 방화벽에서 `1883` inbound 허용 필요
 - `mosquitto` 브로커가 실행 중이어야 함
-- 현재 로컬에서는 실보드가 없어서 Wi-Fi/MQTT 실접속 자체는 아직 미검증 상태다
+- 실보드 단독 검증은 완료했지만 `nodeA`, `nodeB` 통합 검증은 아직 남아 있다
 
 ## 8. 한 줄 결론
 
-소프트웨어 구현과 로컬 검증은 끝났고, 남은 핵심은 `실제 Pico 2 W 보드로 Wi-Fi/MQTT 실연결 검증`이다.
+`node_c`는 단독 기준 구현과 실보드 검증까지 완료됐고, 남은 핵심은 `nodeA`, `nodeB`와의 통합 검증`이다.
