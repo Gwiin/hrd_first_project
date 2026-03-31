@@ -1,0 +1,239 @@
+# Node C Handover Log
+
+- 작성일시: `2026-03-31`
+- 작성 목적: 다음 대화 또는 다음 작업 세션에서 `node_c` 개발을 끊김 없이 이어가기 위한 인수인계 문서
+- 현재 브랜치 기준: `gwiin`
+
+## 1. 현재까지 진행한 작업 요약
+
+`node_c` 중앙관리노드의 1차 구현과 로컬 검증을 완료했다.
+
+완료된 항목:
+
+- `AUTO / MANUAL` 모드 관리 구현
+- 환경 데이터 payload 파싱 구현
+- 문서 기준 임계값 자동 제어 구현
+- 중복 명령 방지 구현
+- UART 수동 명령 처리 구현
+- `nodeA`, `nodeB` timeout 경고 구현
+- `house/status/nodeC` 상태 발행 구현
+- `house/heartbeat/nodeC` heartbeat 발행 구현
+- Pico 2 W + Wi-Fi/MQTT 계층 골격 구현
+- `config.h` 기반 팀 공용 설정 방식 추가
+- Pico 2 W 대상 빌드 성공 확인
+- 로컬 스모크 테스트 문서화 완료
+
+## 2. 주요 파일 구조
+
+핵심 파일:
+
+- [node_c/CMakeLists.txt](/home/asd/hrd_first_project/node_c/CMakeLists.txt)
+- [node_c/include/node_c_config.h](/home/asd/hrd_first_project/node_c/include/node_c_config.h)
+- [node_c/include/node_c_controller.h](/home/asd/hrd_first_project/node_c/include/node_c_controller.h)
+- [node_c/include/node_c_network.h](/home/asd/hrd_first_project/node_c/include/node_c_network.h)
+- [node_c/src/node_c_controller.c](/home/asd/hrd_first_project/node_c/src/node_c_controller.c)
+- [node_c/src/node_c_network.c](/home/asd/hrd_first_project/node_c/src/node_c_network.c)
+- [node_c/src/main.c](/home/asd/hrd_first_project/node_c/src/main.c)
+- [node_c/tests/controller_smoke_test.c](/home/asd/hrd_first_project/node_c/tests/controller_smoke_test.c)
+- [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
+
+## 3. 구현 상세
+
+### 3-1. 중앙 제어 로직
+
+파일:
+
+- [node_c/src/node_c_controller.c](/home/asd/hrd_first_project/node_c/src/node_c_controller.c)
+
+구현된 기능:
+
+- 초기 모드 `AUTO`
+- 초기 상태 `lamp=OFF`, `window=CLOSE`
+- 센서 payload 형식 파싱
+  - `light=275,temp=29.1,humidity=72.0`
+- AUTO 제어 규칙
+  - `light < 280` -> 조명 `ON`
+  - `light > 320` -> 조명 `OFF`
+  - `temp > 28` 또는 `humidity > 70` -> 창문 `OPEN`
+  - `temp <= 27` 그리고 `humidity <= 65` -> 창문 `CLOSE`
+- 상태가 바뀔 때만 명령 발행
+- MANUAL 명령 처리
+  - `mode manual`
+  - `mode auto`
+  - `light on`
+  - `light off`
+  - `window open`
+  - `window close`
+- 상태 로그 및 상태 스냅샷 발행
+- `nodeA`, `nodeB` timeout 경고
+
+### 3-2. 네트워크 계층
+
+파일:
+
+- [node_c/src/node_c_network.c](/home/asd/hrd_first_project/node_c/src/node_c_network.c)
+
+구현된 기능:
+
+- Pico W `cyw43` 초기화
+- STA 모드 전환
+- Wi-Fi 연결 시도
+- MQTT broker DNS lookup
+- MQTT client connect
+- 구독 토픽 등록
+- 수신 토픽에 따라 controller 로직 호출
+- `house/heartbeat/nodeC` 주기 발행
+
+구독 토픽:
+
+- `house/env`
+- `house/status/nodeB`
+- `house/heartbeat/nodeA`
+- `house/heartbeat/nodeB`
+
+발행 토픽:
+
+- `house/mode`
+- `house/cmd/light`
+- `house/cmd/window`
+- `house/status/nodeC`
+- `house/heartbeat/nodeC`
+
+### 3-3. 설정 방식
+
+파일:
+
+- [node_c/include/node_c_config.h](/home/asd/hrd_first_project/node_c/include/node_c_config.h)
+
+현재 기본값:
+
+```c
+#define NODE_C_DEFAULT_WIFI_SSID "bindsoft"
+#define NODE_C_DEFAULT_WIFI_PASSWORD "bindsoft24"
+#define NODE_C_DEFAULT_MQTT_SERVER "163.152.213.111"
+```
+
+추가 사항:
+
+- 기본은 `node_c_config.h` 값 사용
+- 필요하면 CMake 환경변수로 덮어쓰기 가능
+- MQTT 계정도 헤더/환경변수 둘 다 지원
+
+## 4. 지금까지 실행한 테스트
+
+### 4-1. 중앙 로직 호스트 스모크 테스트
+
+파일:
+
+- [node_c/tests/controller_smoke_test.c](/home/asd/hrd_first_project/node_c/tests/controller_smoke_test.c)
+
+검증 완료 항목:
+
+- AUTO 초기화
+- 환경 payload 파싱
+- AUTO 제어 명령 발행
+- MANUAL 명령 처리
+- 상태 발행
+- timeout 경고
+
+결과:
+
+- `PASS`
+
+### 4-2. 로컬 MQTT 브로커 테스트
+
+검증 완료 항목:
+
+- `mosquitto_sub`
+- `mosquitto_pub`
+- 동일 토픽 pub/sub 왕복
+
+결과:
+
+- `PASS`
+
+### 4-3. Pico 2 W 펌웨어 빌드 테스트
+
+검증 완료 항목:
+
+- `PICO_BOARD = pico2_w`
+- `node_c.elf` 생성
+- `node_c.bin` 생성
+
+결과:
+
+- `PASS`
+
+상세는 [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md) 참고
+
+## 5. 아직 남은 작업
+
+내일 실제 보드가 도착하면 아래 작업이 필요하다.
+
+### 5-1. 실보드 업로드 및 연결 확인
+
+확인 필요:
+
+- Pico 2 W에 펌웨어 업로드
+- USB 시리얼 로그 확인
+- `bindsoft` Wi-Fi 연결 성공 여부 확인
+- `163.152.213.111:1883` MQTT broker 연결 성공 여부 확인
+
+### 5-2. 실보드 MQTT 송수신 확인
+
+PC에서 실행:
+
+```bash
+mosquitto_sub -h 163.152.213.111 -t "house/#" -v
+```
+
+확인 항목:
+
+- `house/mode`
+- `house/status/nodeC`
+- `house/heartbeat/nodeC`
+- 환경 데이터 입력 시 `house/cmd/light`, `house/cmd/window`
+
+### 5-3. 단독 테스트
+
+보드가 `node_c` 하나만 있어도 가능한 테스트:
+
+- 부팅 로그 확인
+- Wi-Fi 연결 로그 확인
+- MQTT 연결 로그 확인
+- UART 수동 명령 입력
+- 데모 모드 또는 외부 MQTT publish로 AUTO 동작 확인
+
+### 5-4. 이후 개선 후보
+
+아직 미구현 또는 개선 가능 항목:
+
+- MQTT reconnect / DNS 재시도 안정화
+- 버튼 입력으로 모드 전환
+- heartbeat payload에 uptime 추가
+- 상태 출력 포맷 고도화
+- 실제 `nodeB` 상태 규격과 더 정밀하게 맞추기
+- OLED/LCD 상태 출력
+
+## 6. 내일 보드 도착 후 추천 작업 순서
+
+1. `node_c` 빌드
+2. Pico 2 W에 업로드
+3. USB 시리얼 로그 확인
+4. PC에서 `mosquitto_sub -h 163.152.213.111 -t "house/#" -v`
+5. 보드가 `house/mode`, `house/status/nodeC`, `house/heartbeat/nodeC` 발행하는지 확인
+6. PC에서 `house/env`에 가짜 센서값 publish
+7. `node_c`가 `house/cmd/light`, `house/cmd/window`를 발행하는지 확인
+8. UART로 `mode manual`, `light on`, `window open` 테스트
+
+## 7. 주의할 점
+
+- `MQTT_SERVER`는 반드시 Pico가 접근 가능한 PC의 실제 IPv4여야 한다.
+- 현재 사용 예정 IP는 `163.152.213.111`
+- Windows 방화벽에서 `1883` inbound 허용 필요
+- `mosquitto` 브로커가 실행 중이어야 함
+- 현재 로컬에서는 실보드가 없어서 Wi-Fi/MQTT 실접속 자체는 아직 미검증 상태다
+
+## 8. 한 줄 결론
+
+소프트웨어 구현과 로컬 검증은 끝났고, 남은 핵심은 `실제 Pico 2 W 보드로 Wi-Fi/MQTT 실연결 검증`이다.
