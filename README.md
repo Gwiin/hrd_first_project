@@ -23,7 +23,9 @@
 - [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
 - [web_console/README.md](/home/asd/hrd_first_project/web_console/README.md)
 
-현재 업로드용 펌웨어:
+## 각 노드 펌웨어 UF2 위치
+
+보드 업로드 시 사용할 현재 `uf2` 파일 위치는 아래와 같다.
 
 - `node_a`: [node_a/pico/build/node_a.uf2](/home/asd/hrd_first_project/node_a/pico/build/node_a.uf2)
 - `node_b`: [node_b/build/node_b.uf2](/home/asd/hrd_first_project/node_b/build/node_b.uf2)
