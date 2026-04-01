@@ -1,3 +1,6 @@
 node_c/build/
+node_b/build/
+node_b/build_pico/
+node_b/build_reuse/
 web_console/.venv/
 web_console/__pycache__/

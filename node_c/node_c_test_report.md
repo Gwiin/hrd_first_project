@@ -1,6 +1,6 @@
 # Node C Test Report
 
-- Test time: `2026-04-01 10:55 KST`
+- Test time: `2026-04-01 15:11 KST`
 - Test branch/workspace: `gwiin`, `/home/asd/hrd_first_project`
 - Tester: Codex local execution
 
@@ -15,6 +15,7 @@
 - 로컬 MQTT 브로커 동작 확인
 - 실제 Pico 2 W 실보드 MQTT 송수신 확인
 - `web_console + node_c` 단독 제어 확인
+- `node_b + node_c + web_console` 실보드 통합 확인
 
 ## 2. Executed Tests
 
@@ -100,6 +101,41 @@ house/status/nodeC mode=AUTO,light=0,temp=0.0,humidity=0.0,lamp=ON,window=OPEN
 
 - `PASS`
 - `node_a`, `node_b` 없이도 `web_console + node_c` 조합으로 상태 확인과 수동 제어 가능
+
+### 2-6. node_b + node_c + web_console integration test
+
+실행 환경:
+
+- 실제 `Pico 2 W` 2대 사용
+- `node_b` 액추에이터 노드
+- `node_c` 중앙관리노드
+- `web_console`
+- MQTT broker: `163.152.213.111:1883`
+
+검증 항목:
+
+- `house/env` 발행 시 `node_c`가 AUTO 판단
+- `house/cmd/light`, `house/cmd/window` 자동 발행
+- `node_b`가 액추에이터 상태를 반영
+- `house/status/nodeB`, `house/heartbeat/nodeB`가 웹 콘솔에 반영
+- `house/status/nodeC`, `house/heartbeat/nodeC`가 웹 콘솔에 반영
+
+실제 확인된 흐름 예시:
+
+```txt
+house/env light=250,temp=29.5,humidity=72.0
+house/status/nodeC mode=AUTO,light=250,temp=29.5,humidity=72.0,lamp=ON,window=OPEN
+house/cmd/light ON
+house/cmd/window OPEN
+house/status/nodeB lamp=ON,window=OPEN
+house/heartbeat/nodeB alive
+house/heartbeat/nodeC alive
+```
+
+판정:
+
+- `PASS`
+- `node_c`와 `node_b`가 현재 MQTT 계약 기준으로 정상 통합됨
 
 ### 2-2. Local MQTT broker smoke test
 
@@ -222,14 +258,16 @@ house/heartbeat/nodeC alive
 - 실제 Pico 2 W MQTT 송수신 정상
 - 실제 Pico 2 W AUTO 제어 정상
 - 웹 콘솔 단독 제어 정상
+- `node_b + node_c + web_console` 통합 정상
+- `node_b` WS2812 8픽셀 전체 제어 펌웨어 빌드 정상
 
 ## 4. Remaining Real-device Test
 
 실보드에서 최종 확인이 필요한 항목:
 
-- 실제 `nodeB`와의 통합 확인
 - 실제 `nodeA`와의 통합 확인
 - 웹 콘솔 화면/상태 표시 고도화
+- WS2812 색상 정책 확정
 
 ## 5. Conclusion
 

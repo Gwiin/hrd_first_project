@@ -6,7 +6,7 @@
 
 ## 1. 현재까지 진행한 작업 요약
 
-`node_c` 중앙관리노드 구현, 웹 콘솔 연동, 실보드 단독 검증, `web_console + node_c` 단독 제어 검증까지 완료했다.
+`node_c` 중앙관리노드 구현, 웹 콘솔 연동, 실보드 단독 검증, `web_console + node_c` 단독 제어 검증, `node_b` 실보드 액추에이터 통합 검증까지 완료했다.
 
 완료된 항목:
 
@@ -28,6 +28,9 @@
 - 로컬 스모크 테스트 문서화 완료
 - 실보드 MQTT 단독 테스트 완료
 - 실보드 AUTO 제어 테스트 완료
+- `node_b` MQTT 액추에이터 노드 통합 완료
+- `web_console + node_c + node_b` 통합 테스트 완료
+- `house/env` 임의 환경값 기준 AUTO 명령 전파 확인
 
 ## 2. 주요 파일 구조
 
@@ -116,6 +119,19 @@
 - `house/status/nodeC`
 - `house/heartbeat/nodeC`
 
+### 3-2-1. 현재 node_b 통합 상태
+
+현재 `node_b`는 아래 역할로 통합되었다.
+
+- `house/cmd/light` 수신
+- `house/cmd/window` 수신
+- 서보 `GP14` 제어
+- `WS2812 RGB Strip` 데이터 핀 `GP16` 제어
+- `house/status/nodeB` 발행
+- `house/heartbeat/nodeB` 발행
+
+현재 `lamp ON` 상태는 `WS2812` 8픽셀 전체 흰색 점등으로 매핑되어 있다.
+
 ### 3-3. 설정 방식
 
 파일:
@@ -154,6 +170,7 @@
 - `house/heartbeat/nodeC` 상태 표시
 - 웹 버튼으로 `house/mode`, `house/cmd/light`, `house/cmd/window` publish
 - `node_a`, `node_b` 없이도 `node_c` 단독 제어 데모 가능
+- `node_b`, `node_c` 통합 시 `Controller`와 `Actuator` 상태를 한 화면에서 동시 확인 가능
 
 ## 4. 지금까지 실행한 테스트
 
@@ -215,22 +232,51 @@
 - AUTO 제어 로직 실보드 검증
 - `web_console`에서 `MANUAL` 모드 전환 검증
 - `web_console`에서 `LIGHT/WINDOW` 수동 제어 검증
+- `node_b` heartbeat 수신 및 상태 반영 확인
+- `node_c` AUTO 명령을 `node_b`가 실제 반영하는 통합 흐름 확인
 
 결과:
 
 - `PASS`
 
+### 4-5. node_b + node_c + web_console integration test
+
+실행 환경:
+
+- 실제 `Pico 2 W` 2대 사용
+- `node_b` 액추에이터 노드
+- `node_c` 중앙관리노드
+- `web_console`
+- MQTT broker: `163.152.213.111:1883`
+
+실제 확인된 핵심 흐름:
+
+```txt
+house/env light=250,temp=29.5,humidity=72.0
+house/status/nodeC mode=AUTO,light=250,temp=29.5,humidity=72.0,lamp=ON,window=OPEN
+house/cmd/light ON
+house/cmd/window OPEN
+house/status/nodeB lamp=ON,window=OPEN
+house/heartbeat/nodeB alive
+house/heartbeat/nodeC alive
+```
+
+결과:
+
+- `PASS`
+- `node_c` AUTO 판단과 `node_b` 액추에이터 반영이 MQTT를 통해 정상 연동됨
+
 상세는 [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md) 참고
 
 ## 5. 아직 남은 작업
 
-이제 남은 작업은 주로 통합 테스트와 화면/상태 고도화다.
+이제 남은 작업은 주로 안정화와 화면/상태 고도화다.
 
 ### 5-1. 실보드 업로드 및 연결 확인
 
 확인 필요:
 
-- UART 수동 명령 처리 실보드 확인
+- MQTT 연결 실패 시 재시도 안정화
 - USB 시리얼 로그 포맷 최종 점검
 
 ### 5-2. 웹 콘솔 고도화
@@ -257,7 +303,8 @@
 - 버튼 입력으로 모드 전환
 - heartbeat payload에 uptime 추가
 - 상태 출력 포맷 고도화
-- 실제 `nodeB` 상태 규격과 더 정밀하게 맞추기
+- WS2812 색상 정책 고도화
+- 실제 `nodeA` 통합
 - OLED/LCD 상태 출력
 
 ## 6. 내일 보드 도착 후 추천 작업 순서

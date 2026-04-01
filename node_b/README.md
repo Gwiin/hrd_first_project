@@ -1,50 +1,70 @@
 # node_b
 
-`tempservo_led.c`를 `node_c`와 통합할 때 필요한 자료만 모아둔 폴더입니다.
+`node_b`는 현재 `node_c`가 발행한 제어 명령을 실제 액추에이터에 반영하는 MQTT 액추에이터 노드입니다.
 
-이 폴더의 목적:
+현재 포함된 기능:
 
-- `node_c`가 구독/발행해야 하는 MQTT 토픽 정리
-- 허용하는 명령 형식 정리
-- 상태/센서 JSON 예시 제공
-- 통합 전에 확인할 핀, 브로커, 동작 규칙 정리
+- `house/cmd/light` 구독 후 LED ON/OFF
+- `house/cmd/window` 구독 후 서보 OPEN/CLOSE
+- `house/status/nodeB` 상태 스냅샷 발행
+- `house/heartbeat/nodeB` heartbeat 발행
+- Pico W Wi-Fi / MQTT 기반 실보드 동작
+- `WS2812 RGB Strip` 8픽셀 전체 ON/OFF 제어
 
-핵심 자료:
+현재 하드웨어 기준:
 
-- `docs/tempservo_led_node_c_integration.md`
-- `docs/mqtt_examples.md`
-- `docs/node_c_checklist.md`
-- `include/tempservo_led_contract.h`
-- `src/tempservo_led.c`
+- SG90 servo: `GP14`
+- WS2812 data pin: `GP16`
 
-현재 기준 `tempservo_led.c` 특성:
+현재 검증된 통합 흐름:
 
-- DHT22 온습도 센서 읽기
-- 습도 기준 자동 서보 제어
-- 자동/수동 LED 제어
-- LCD 상태 표시
-- MQTT 텍스트/JSON 동시 지원
+- 웹 콘솔에서 `Light On/Off`, `Window Open/Close` 발행
+- `node_b`가 `house/cmd/light`, `house/cmd/window` 수신
+- `house/status/nodeB`와 `house/heartbeat/nodeB`가 웹 콘솔에 반영
+- `node_c`와 함께 사용할 때 `house/env` 기준 AUTO 명령을 받아 액추에이터 반영
 
-브로커 기본값:
+MQTT 계약:
 
-- Host: `163.152.213.101`
-- Port: `1883`
+- 구독
+  - `house/cmd/light`
+  - `house/cmd/window`
+- 발행
+  - `house/status/nodeB`
+  - `house/heartbeat/nodeB`
 
-제어 토픽:
+상태 payload 형식:
 
-- `/tempservo_led/servo`
-- `/tempservo_led/led`
+```txt
+lamp=ON,window=OPEN
+lamp=OFF,window=CLOSE
+```
 
-센서/상태 토픽:
+WS2812 메모:
 
-- `/tempservo_led/temperature`
-- `/tempservo_led/humidity`
-- `/tempservo_led/sensor`
-- `/tempservo_led/sensor/json`
-- `/tempservo_led/servo/state`
-- `/tempservo_led/servo/state/json`
-- `/tempservo_led/led/state`
-- `/tempservo_led/led/state/json`
-- `/tempservo_led/status`
-- `/tempservo_led/status/json`
-- `/tempservo_led/online`
+- 현재 `lamp ON`이면 스트립 8픽셀 전체를 흰색으로 점등
+- 현재 `lamp OFF`이면 스트립 8픽셀 전체를 소등
+- `WS2812`는 단순 `gpio_put()`로 제어되지 않으므로 PIO 기반 신호 생성 방식으로 수정 완료
+- 배선 시 `DIN -> GP16`, `VCC -> 5V`, `GND -> 공통 GND` 연결 필요
+
+기본 브로커 설정은 [node_b_config.h](/home/asd/hrd_first_project/node_b/include/node_b_config.h) 에 있으며, 필요하면 `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_SERVER` 환경변수로 빌드 시 덮어쓸 수 있습니다.
+
+빌드 예시:
+
+```bash
+cd node_b
+mkdir -p build
+cd build
+cmake ..
+make -j4
+```
+
+최종 업로드 파일:
+
+- [node_b.uf2](/home/asd/hrd_first_project/node_b/build/node_b.uf2)
+
+관련 파일:
+
+- [tempservo_led.c](/home/asd/hrd_first_project/node_b/src/tempservo_led.c)
+- [tempservo_led_contract.h](/home/asd/hrd_first_project/node_b/include/tempservo_led_contract.h)
+- [node_b_config.h](/home/asd/hrd_first_project/node_b/include/node_b_config.h)
+- [lwipopts.h](/home/asd/hrd_first_project/node_b/lwipopts.h)
