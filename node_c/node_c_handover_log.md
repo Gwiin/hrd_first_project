@@ -31,6 +31,8 @@
 - `node_b` MQTT 액추에이터 노드 통합 완료
 - `web_console + node_c + node_b` 통합 테스트 완료
 - `house/env` 임의 환경값 기준 AUTO 명령 전파 확인
+- `node_a` MQTT 센서 노드 통합 완료
+- `node_a` 조도값 정규화 반영 완료
 
 ## 2. 주요 파일 구조
 

@@ -16,6 +16,7 @@
 - 실제 Pico 2 W 실보드 MQTT 송수신 확인
 - `web_console + node_c` 단독 제어 확인
 - `node_b + node_c + web_console` 실보드 통합 확인
+- `node_a + node_b + node_c + web_console` 최종 MQTT 흐름 확인
 
 ## 2. Executed Tests
 

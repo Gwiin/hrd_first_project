@@ -6,6 +6,7 @@
 
 - CDS 조도 센서 읽기
 - DHT 계열 온습도 센서 읽기
+- 조도 ADC raw 값을 `node_c` 임계값에 맞는 범위로 정규화
 - `house/env` 발행
 - `house/heartbeat/nodeA` 발행
 - Pico W Wi-Fi / MQTT 기반 실보드 동작
@@ -26,6 +27,12 @@ MQTT 계약:
 ```txt
 light=250,temp=29.5,humidity=72.0
 ```
+
+조도 처리 메모:
+
+- CDS ADC raw 값은 `0~4095`
+- 현재는 `node_c` 자동 제어 기준에 맞추기 위해 `0~400` 범위로 정규화해서 발행
+- 따라서 `node_c`의 기본 조도 임계값 `280 / 320`과 바로 맞물린다
 
 기본 브로커 설정은 [node_a_config.h](/home/asd/hrd_first_project/node_a/pico/include/node_a_config.h) 에 있으며, 필요하면 `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_SERVER` 환경변수로 빌드 시 덮어쓸 수 있습니다.
 

@@ -18,6 +18,8 @@
 
 현재 검증된 통합 흐름:
 
+- `node_a`가 `house/env` 발행
+- `node_c`가 조도/온습도 기준 AUTO 판단
 - 웹 콘솔에서 `Light On/Off`, `Window Open/Close` 발행
 - `node_b`가 `house/cmd/light`, `house/cmd/window` 수신
 - `house/status/nodeB`와 `house/heartbeat/nodeB`가 웹 콘솔에 반영

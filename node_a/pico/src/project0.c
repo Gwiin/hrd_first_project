@@ -55,6 +55,7 @@
 #define NODE_A_LOG_BUFFER_SIZE 160
 #define NODE_A_HEARTBEAT_INTERVAL_MS 2000
 #define NODE_A_SENSOR_INTERVAL_MS 2000
+#define NODE_A_LIGHT_SCALE_MAX 400
 
 typedef struct {
     mqtt_client_t *client;
@@ -68,6 +69,11 @@ typedef struct {
 } node_a_state_t;
 
 static node_a_state_t g_state;
+
+static uint16_t normalize_light(uint16_t raw)
+{
+    return (uint16_t) ((raw * NODE_A_LIGHT_SCALE_MAX) / 4095u);
+}
 
 static void node_a_log(const char *fmt, ...)
 {
@@ -171,8 +177,10 @@ static void publish_heartbeat(void)
 static void publish_environment(uint16_t light_raw, float temperature, float humidity)
 {
     char payload[96];
+    uint16_t normalized_light = normalize_light(light_raw);
 
-    snprintf(payload, sizeof(payload), "light=%u,temp=%.1f,humidity=%.1f", light_raw, temperature, humidity);
+    snprintf(payload, sizeof(payload), "light=%u,temp=%.1f,humidity=%.1f", normalized_light, temperature, humidity);
+    node_a_log("[NODE_A] PUB raw=%u normalized=%u", light_raw, normalized_light);
     node_a_log("[NODE_A] PUB %s", payload);
     node_a_publish(NODE_A_TOPIC_ENV, payload);
 }

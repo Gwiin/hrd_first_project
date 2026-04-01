@@ -16,6 +16,23 @@
 - `house/heartbeat/nodeC` heartbeat 발행
 - Pico W Wi-Fi / MQTT 연동용 네트워크 계층
 
+## 현재 확인된 통합 운용 방식
+
+현재는 아래 조합으로 전체 흐름을 확인할 수 있다.
+
+- `node_a` 센서 노드
+- `node_b` 액추에이터 노드
+- `node_c` 중앙관리노드
+- [web_console](/home/asd/hrd_first_project/web_console/README.md)
+- MQTT broker
+
+현재 확인된 핵심 흐름:
+
+- `node_a`가 `house/env` 발행
+- `node_c`가 `AUTO` 규칙으로 `house/cmd/light`, `house/cmd/window` 발행
+- `node_b`가 액추에이터 상태를 실제 반영
+- 웹 콘솔에서 `Environment`, `Controller`, `Actuator`, `Heartbeat` 상태 확인
+
 ## 현재 확인된 단독 운용 방식
 
 현재는 `node_a`, `node_b` 없이도 아래 조합으로 단독 테스트가 가능하다.
@@ -69,6 +86,8 @@ Wi-Fi 정보와 MQTT 서버 주소가 설정되지 않으면 자동으로 `node_
 - 밝아지면 `house/cmd/light` 에 `OFF`
 - 덥거나 습하면 `house/cmd/window` 에 `OPEN`
 - 정상 범위면 `house/cmd/window` 에 `CLOSE`
+
+현재 `node_a`는 조도 ADC raw 값을 `0~400` 범위로 정규화해서 `house/env`에 발행하므로, 기본 조도 임계값 `280 / 320`과 바로 맞물린다.
 
 ## UART 명령
 
@@ -169,8 +188,7 @@ export MQTT_PASSWORD=your-pass
 
 ## 다음 작업 후보
 
-- 버튼 입력으로 모드 전환 추가
 - MQTT reconnect / DNS 재시도 안정화
 - heartbeat payload에 uptime 또는 상태 코드 추가
-- `nodeA`, `nodeB` 실제 통합 시 상태 규격 정리
+- `nodeA`, `nodeB` 실제 하우스 모형 배선 기준 최종 보정
 - OLED/LCD 상태 출력 추가
