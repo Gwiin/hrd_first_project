@@ -1,0 +1,5 @@
+/home/asd/hrd_first_project/node_c/build/pioasm-install/pioasm/pioasm
+/home/asd/hrd_first_project/node_c/build/pioasm-install/pioasm/pioasmTargets.cmake
+/home/asd/hrd_first_project/node_c/build/pioasm-install/pioasm/pioasmTargets-release.cmake
+/home/asd/hrd_first_project/node_c/build/pioasm-install/pioasm/pioasmConfig.cmake
+/home/asd/hrd_first_project/node_c/build/pioasm-install/pioasm/pioasmConfigVersion.cmake

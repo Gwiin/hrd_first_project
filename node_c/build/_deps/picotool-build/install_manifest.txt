@@ -1,0 +1,7 @@
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/picotool
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/picotoolTargets.cmake
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/picotoolTargets-release.cmake
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/picotoolConfig.cmake
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/picotoolConfigVersion.cmake
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/enc_bootloader.elf
+/home/asd/hrd_first_project/node_c/build/_deps/picotool/enc_bootloader_mbedtls.elf

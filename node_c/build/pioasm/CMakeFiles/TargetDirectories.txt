@@ -1,0 +1,7 @@
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/pioasm.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/edit_cache.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/rebuild_cache.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/list_install_components.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/install.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/install/local.dir
+/home/asd/hrd_first_project/node_c/build/pioasm/CMakeFiles/install/strip.dir
