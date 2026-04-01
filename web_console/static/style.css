@@ -299,10 +299,6 @@ button:active {
   .hero,
   .top-grid,
   .lower-grid,
-  .metric-grid,
-  .status-grid,
-  .heartbeat-list,
-  .button-group,
   .log-entry {
     grid-template-columns: 1fr;
   }
@@ -314,5 +310,145 @@ button:active {
   .shell {
     width: min(100% - 20px, 1180px);
     padding-top: 20px;
+  }
+
+  .metric-grid,
+  .status-grid,
+  .heartbeat-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .button-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    font-size: 15px;
+  }
+
+  .shell {
+    width: min(100% - 16px, 1180px);
+    padding: 14px 0 28px;
+  }
+
+  .hero,
+  .panel {
+    border-radius: 20px;
+  }
+
+  .hero {
+    gap: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 9vw, 2.7rem);
+    line-height: 1.02;
+  }
+
+  .hero-copy {
+    font-size: 0.96rem;
+    line-height: 1.5;
+  }
+
+  .hero-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .meta-card,
+  .panel {
+    box-shadow: 0 16px 36px rgba(72, 52, 32, 0.1);
+  }
+
+  .meta-card {
+    border-radius: 18px;
+    padding: 14px 15px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .panel-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .panel-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .metric-grid,
+  .status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric:last-child,
+  .status-grid div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .metric,
+  .heartbeat-card,
+  .status-grid div {
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .metric strong {
+    font-size: 1.55rem;
+  }
+
+  .status-grid strong,
+  .heartbeat-card strong {
+    font-size: 1.05rem;
+  }
+
+  .heartbeat-list {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    min-height: 50px;
+    padding: 14px 16px;
+  }
+
+  .raw-box {
+    min-height: 56px;
+    margin-top: 14px;
+    padding: 12px;
+    font-size: 0.92rem;
+  }
+
+  .log-entry {
+    gap: 6px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-meta,
+  .metric-grid,
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric:last-child,
+  .status-grid div:last-child {
+    grid-column: auto;
+  }
+
+  .badge,
+  .stamp {
+    font-size: 0.75rem;
   }
 }
