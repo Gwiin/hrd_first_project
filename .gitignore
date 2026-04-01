@@ -122,3 +122,11 @@ node_b/**
 !node_b/**/CMakeLists.txt
 !node_b/**/Makefile
 !node_b/**/*.cmake
+
+node_a/pico/build/
+node_c/build/
+node_b/build/
+node_b/build_pico/
+node_b/build_reuse/
+web_console/.venv/
+web_console/__pycache__/
