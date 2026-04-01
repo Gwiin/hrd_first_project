@@ -1,5 +1,6 @@
 # node_b notes
 
-- actuator control
-- mqtt command handling
-- hardware pin mapping
+- node_c integration handoff package
+- tempservo_led MQTT topic contract
+- JSON and text command examples
+- hardware pin mapping summary
