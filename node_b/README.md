@@ -15,6 +15,7 @@
 - `docs/mqtt_examples.md`
 - `docs/node_c_checklist.md`
 - `include/tempservo_led_contract.h`
+- `src/tempservo_led.c`
 
 현재 기준 `tempservo_led.c` 특성:
 
