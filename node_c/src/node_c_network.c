@@ -117,6 +117,12 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t f
 
     if (strcmp(ctx->topic_buffer, NODE_C_TOPIC_ENV) == 0) {
         node_c_controller_apply_env_payload(ctx->controller, ctx->payload_buffer, to_ms_since_boot(get_absolute_time()));
+    } else if (strcmp(ctx->topic_buffer, NODE_C_TOPIC_MODE) == 0) {
+        node_c_controller_apply_mode_payload(ctx->controller, ctx->payload_buffer, to_ms_since_boot(get_absolute_time()));
+    } else if (strcmp(ctx->topic_buffer, NODE_C_TOPIC_CMD_LIGHT) == 0) {
+        node_c_controller_apply_light_command_payload(ctx->controller, ctx->payload_buffer, to_ms_since_boot(get_absolute_time()));
+    } else if (strcmp(ctx->topic_buffer, NODE_C_TOPIC_CMD_WINDOW) == 0) {
+        node_c_controller_apply_window_command_payload(ctx->controller, ctx->payload_buffer, to_ms_since_boot(get_absolute_time()));
     } else if (strcmp(ctx->topic_buffer, NODE_C_TOPIC_STATUS_NODE_B) == 0) {
         node_c_controller_apply_node_b_status(ctx->controller, ctx->payload_buffer, to_ms_since_boot(get_absolute_time()));
     }
@@ -139,6 +145,9 @@ static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len
 static void subscribe_required_topics(node_c_network_context_t *ctx)
 {
     mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_ENV, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
+    mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_MODE, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
+    mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_CMD_LIGHT, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
+    mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_CMD_WINDOW, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
     mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_STATUS_NODE_B, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
     mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_HEARTBEAT_NODE_A, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);
     mqtt_sub_unsub(ctx->client, NODE_C_TOPIC_HEARTBEAT_NODE_B, MQTT_QOS, mqtt_subscribe_request_cb, ctx, true);

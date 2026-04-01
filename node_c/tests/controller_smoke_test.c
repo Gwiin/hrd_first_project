@@ -96,9 +96,26 @@ int main(void)
     assert(has_event(&ctx, NODE_C_TOPIC_MODE, "MANUAL"));
 
     reset_events(&ctx);
+    assert(node_c_controller_apply_mode_payload(&controller, "AUTO", 3050));
+    assert(controller.mode == NODE_C_MODE_AUTO);
+    assert(!has_event(&ctx, NODE_C_TOPIC_MODE, "AUTO"));
+    assert(has_event(&ctx, NODE_C_TOPIC_STATUS_NODE_C, "mode=AUTO,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE"));
+
+    reset_events(&ctx);
+    assert(node_c_controller_apply_mode_payload(&controller, "manual", 3075));
+    assert(controller.mode == NODE_C_MODE_MANUAL);
+    assert(!has_event(&ctx, NODE_C_TOPIC_MODE, "MANUAL"));
+    assert(has_event(&ctx, NODE_C_TOPIC_STATUS_NODE_C, "mode=MANUAL,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE"));
+
+    reset_events(&ctx);
     assert(node_c_controller_handle_uart_command(&controller, "light on", 3100));
     assert(controller.lamp_state == NODE_C_SWITCH_ON);
     assert(has_event(&ctx, NODE_C_TOPIC_CMD_LIGHT, "ON"));
+
+    reset_events(&ctx);
+    assert(node_c_controller_apply_light_command_payload(&controller, "OFF", 3150));
+    assert(controller.lamp_state == NODE_C_SWITCH_OFF);
+    assert(has_event(&ctx, NODE_C_TOPIC_STATUS_NODE_C, "mode=MANUAL,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE"));
 
     reset_events(&ctx);
     assert(node_c_controller_handle_uart_command(&controller, "window open", 3200));
@@ -106,9 +123,20 @@ int main(void)
     assert(has_event(&ctx, NODE_C_TOPIC_CMD_WINDOW, "OPEN"));
 
     reset_events(&ctx);
+    assert(node_c_controller_apply_window_command_payload(&controller, "close", 3250));
+    assert(controller.window_state == NODE_C_WINDOW_CLOSED);
+    assert(has_event(&ctx, NODE_C_TOPIC_STATUS_NODE_C, "mode=MANUAL,light=350,temp=26.0,humidity=55.0,lamp=OFF,window=CLOSE"));
+
+    reset_events(&ctx);
     assert(node_c_controller_handle_uart_command(&controller, "mode auto", 3300));
     assert(controller.mode == NODE_C_MODE_AUTO);
     assert(has_event(&ctx, NODE_C_TOPIC_MODE, "AUTO"));
+
+    reset_events(&ctx);
+    assert(!node_c_controller_apply_light_command_payload(&controller, "ON", 3325));
+
+    reset_events(&ctx);
+    assert(!node_c_controller_apply_window_command_payload(&controller, "OPEN", 3350));
 
     reset_events(&ctx);
     assert(node_c_controller_apply_node_b_status(&controller, "lamp=OFF,window=CLOSE", 3400));

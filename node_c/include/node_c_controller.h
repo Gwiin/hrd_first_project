@@ -74,6 +74,9 @@ typedef struct {
 void node_c_controller_init(node_c_controller_t *controller, const node_c_io_t *io);
 bool node_c_controller_apply_env_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms);
 bool node_c_controller_apply_node_b_status(node_c_controller_t *controller, const char *payload, uint64_t now_ms);
+bool node_c_controller_apply_mode_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms);
+bool node_c_controller_apply_light_command_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms);
+bool node_c_controller_apply_window_command_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms);
 bool node_c_controller_handle_uart_command(node_c_controller_t *controller, const char *command, uint64_t now_ms);
 void node_c_controller_periodic(node_c_controller_t *controller, uint64_t now_ms);
 void node_c_controller_publish_boot_state(node_c_controller_t *controller);

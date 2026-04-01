@@ -8,7 +8,7 @@ if (NOT PICO_BOARD)
     set(PICO_BOARD pico2_w CACHE STRING "Target board" FORCE)
 endif ()
 
-set(PICO_NO_PICOTOOL 1 CACHE BOOL "Skip picotool fetch during local builds" FORCE)
+option(PICO_NO_PICOTOOL "Skip picotool fetch during local builds" OFF)
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 

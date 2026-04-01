@@ -7,6 +7,10 @@
 
 #define NODE_C_LOG_BUFFER_SIZE 192
 
+static void publish_mode(node_c_controller_t *controller);
+static void publish_status_snapshot(node_c_controller_t *controller);
+static void evaluate_auto_rules(node_c_controller_t *controller);
+
 static void node_c_logf(node_c_controller_t *controller, const char *fmt, ...)
 {
     char buffer[NODE_C_LOG_BUFFER_SIZE];
@@ -102,6 +106,16 @@ static bool equals_ignore_case(const char *lhs, const char *rhs)
     return *lhs == '\0' && *rhs == '\0';
 }
 
+static bool ensure_manual_mode(node_c_controller_t *controller, const char *source, const char *payload)
+{
+    if (controller->mode == NODE_C_MODE_MANUAL) {
+        return true;
+    }
+
+    node_c_logf(controller, "[NODE_C] WARN manual command ignored in AUTO mode from %s: %s", source, payload);
+    return false;
+}
+
 static const char *mode_name(node_c_mode_t mode)
 {
     return mode == NODE_C_MODE_MANUAL ? "MANUAL" : "AUTO";
@@ -115,6 +129,32 @@ static const char *lamp_name(node_c_switch_state_t state)
 static const char *window_name(node_c_window_state_t state)
 {
     return state == NODE_C_WINDOW_OPEN ? "OPEN" : "CLOSE";
+}
+
+static bool set_mode(node_c_controller_t *controller, node_c_mode_t next_mode, const char *reason, bool publish_topic)
+{
+    if (controller == NULL) {
+        return false;
+    }
+
+    if (controller->mode == next_mode) {
+        return true;
+    }
+
+    controller->mode = next_mode;
+    if (reason != NULL) {
+        node_c_logf(controller, "[NODE_C] MODE SOURCE %s", reason);
+    }
+    if (publish_topic) {
+        publish_mode(controller);
+    } else {
+        node_c_logf(controller, "[NODE_C] MODE %s", mode_name(controller->mode));
+    }
+    if (next_mode == NODE_C_MODE_AUTO) {
+        evaluate_auto_rules(controller);
+    }
+    publish_status_snapshot(controller);
+    return true;
 }
 
 static void publish_mode(node_c_controller_t *controller)
@@ -304,6 +344,113 @@ bool node_c_controller_apply_node_b_status(node_c_controller_t *controller, cons
     return true;
 }
 
+bool node_c_controller_apply_mode_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms)
+{
+    char normalized[32];
+
+    (void) now_ms;
+
+    if (controller == NULL || payload == NULL) {
+        return false;
+    }
+
+    trim_copy(normalized, sizeof(normalized), payload);
+    lowercase_in_place(normalized);
+
+    if (normalized[0] == '\0') {
+        return false;
+    }
+
+    if (strcmp(normalized, "auto") == 0 || strcmp(normalized, "mode auto") == 0 || strcmp(normalized, "mode_auto") == 0) {
+        return set_mode(controller, NODE_C_MODE_AUTO, "mqtt", false);
+    }
+
+    if (strcmp(normalized, "manual") == 0 || strcmp(normalized, "mode manual") == 0 || strcmp(normalized, "mode_manual") == 0) {
+        return set_mode(controller, NODE_C_MODE_MANUAL, "mqtt", false);
+    }
+
+    node_c_logf(controller, "[NODE_C] WARN invalid mode payload: %s", normalized);
+    return false;
+}
+
+bool node_c_controller_apply_light_command_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms)
+{
+    char normalized[32];
+
+    (void) now_ms;
+
+    if (controller == NULL || payload == NULL) {
+        return false;
+    }
+
+    trim_copy(normalized, sizeof(normalized), payload);
+    lowercase_in_place(normalized);
+
+    if (normalized[0] == '\0') {
+        return false;
+    }
+
+    if (!ensure_manual_mode(controller, "mqtt light", normalized)) {
+        return false;
+    }
+
+    if (strcmp(normalized, "on") == 0) {
+        controller->lamp_state = NODE_C_SWITCH_ON;
+        node_c_logf(controller, "[NODE_C] CMD LIGHT ON (mqtt)");
+        publish_status_snapshot(controller);
+        return true;
+    }
+
+    if (strcmp(normalized, "off") == 0) {
+        controller->lamp_state = NODE_C_SWITCH_OFF;
+        node_c_logf(controller, "[NODE_C] CMD LIGHT OFF (mqtt)");
+        publish_status_snapshot(controller);
+        return true;
+    }
+
+    node_c_logf(controller, "[NODE_C] WARN invalid light payload: %s", normalized);
+    return false;
+}
+
+bool node_c_controller_apply_window_command_payload(node_c_controller_t *controller, const char *payload, uint64_t now_ms)
+{
+    char normalized[32];
+
+    (void) now_ms;
+
+    if (controller == NULL || payload == NULL) {
+        return false;
+    }
+
+    trim_copy(normalized, sizeof(normalized), payload);
+    lowercase_in_place(normalized);
+
+    if (normalized[0] == '\0') {
+        return false;
+    }
+
+    if (!ensure_manual_mode(controller, "mqtt window", normalized)) {
+        return false;
+    }
+
+    if (strcmp(normalized, "open") == 0) {
+        controller->window_state = NODE_C_WINDOW_OPEN;
+        node_c_logf(controller, "[NODE_C] CMD WINDOW OPEN (mqtt)");
+        publish_status_snapshot(controller);
+        return true;
+    }
+
+    if (strcmp(normalized, "close") == 0 || strcmp(normalized, "closed") == 0) {
+        controller->window_state = NODE_C_WINDOW_CLOSED;
+        node_c_logf(controller, "[NODE_C] CMD WINDOW CLOSE (mqtt)");
+        publish_status_snapshot(controller);
+        return true;
+    }
+
+    node_c_logf(controller, "[NODE_C] WARN invalid window payload: %s", normalized);
+    return false;
+}
+
 bool node_c_controller_handle_uart_command(node_c_controller_t *controller, const char *command, uint64_t now_ms)
 {
     char normalized[64];
@@ -322,22 +469,14 @@ bool node_c_controller_handle_uart_command(node_c_controller_t *controller, cons
     }
 
     if (strcmp(normalized, "mode auto") == 0 || strcmp(normalized, "mode_auto") == 0) {
-        controller->mode = NODE_C_MODE_AUTO;
-        publish_mode(controller);
-        evaluate_auto_rules(controller);
-        publish_status_snapshot(controller);
-        return true;
+        return set_mode(controller, NODE_C_MODE_AUTO, "uart", true);
     }
 
     if (strcmp(normalized, "mode manual") == 0 || strcmp(normalized, "mode_manual") == 0) {
-        controller->mode = NODE_C_MODE_MANUAL;
-        publish_mode(controller);
-        publish_status_snapshot(controller);
-        return true;
+        return set_mode(controller, NODE_C_MODE_MANUAL, "uart", true);
     }
 
-    if (controller->mode != NODE_C_MODE_MANUAL) {
-        node_c_logf(controller, "[NODE_C] WARN manual command ignored in AUTO mode: %s", normalized);
+    if (!ensure_manual_mode(controller, "uart", normalized)) {
         return false;
     }
 

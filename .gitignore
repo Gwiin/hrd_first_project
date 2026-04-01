@@ -1,0 +1,3 @@
+node_c/build/
+web_console/.venv/
+web_console/__pycache__/

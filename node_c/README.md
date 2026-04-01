@@ -67,14 +67,16 @@ window close
 현재 구현 기준 실제 MQTT 연결 흐름은 아래와 같다.
 
 1. `house/env` 수신 시 `node_c_controller_apply_env_payload()`
-2. `house/status/nodeB` 수신 시 `node_c_controller_apply_node_b_status()`
-3. 시리얼 또는 버튼 입력 시 `node_c_controller_handle_uart_command()`
-4. 주기 루프에서 `node_c_controller_periodic()`
-5. `house/heartbeat/nodeC` 는 2초 주기로 발행
+2. `house/mode` 수신 시 `AUTO` / `MANUAL` 모드 전환
+3. `house/status/nodeB` 수신 시 `node_c_controller_apply_node_b_status()`
+4. 시리얼 또는 버튼 입력 시 `node_c_controller_handle_uart_command()`
+5. 주기 루프에서 `node_c_controller_periodic()`
+6. `house/heartbeat/nodeC` 는 2초 주기로 발행
 
 구독 토픽:
 
 - `house/env`
+- `house/mode`
 - `house/status/nodeB`
 - `house/heartbeat/nodeA`
 - `house/heartbeat/nodeB`
