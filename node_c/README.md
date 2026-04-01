@@ -169,6 +169,7 @@ export MQTT_PASSWORD=your-pass
 
 ## 다음 작업 후보
 
+- 버튼 입력으로 모드 전환 추가
 - MQTT reconnect / DNS 재시도 안정화
 - heartbeat payload에 uptime 또는 상태 코드 추가
 - `nodeA`, `nodeB` 실제 통합 시 상태 규격 정리

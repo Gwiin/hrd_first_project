@@ -17,7 +17,7 @@
 - [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
 - [web_console/README.md](/home/asd/hrd_first_project/web_console/README.md)
 
-## 1차 프로젝트 일지
+## 1차 프로젝트 개발 일지
 |일자|요일|타임|내용|
 |---|---|---|---|
 |3/30|월|오전|아이디어 회의|
