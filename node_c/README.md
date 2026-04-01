@@ -9,9 +9,32 @@
 - 문서 기준 임계값 자동 제어
 - 중복 명령 방지
 - UART 수동 명령 처리
+- MQTT `house/mode` 수신 처리
+- MQTT `house/cmd/light`, `house/cmd/window` 수신 처리
 - `nodeA`, `nodeB` timeout 경고
 - `house/status/nodeC` 상태 스냅샷 발행
-- Pico W Wi-Fi / MQTT 연동용 네트워크 계층 골격
+- `house/heartbeat/nodeC` heartbeat 발행
+- Pico W Wi-Fi / MQTT 연동용 네트워크 계층
+
+## 현재 확인된 단독 운용 방식
+
+현재는 `node_a`, `node_b` 없이도 아래 조합으로 단독 테스트가 가능하다.
+
+- `node_c` 실보드
+- MQTT broker
+- [web_console](/home/asd/hrd_first_project/web_console/README.md)
+
+이 조합에서 가능한 것:
+
+- 현재 모드 확인
+- `AUTO` / `MANUAL` 전환
+- `MANUAL` 모드에서 `LIGHT ON/OFF`, `WINDOW OPEN/CLOSE`
+- `house/status/nodeC`, `house/heartbeat/nodeC` 모니터링
+
+주의:
+
+- `AUTO` 모드에서는 수동 `light/window` MQTT 명령을 무시한다.
+- `house/env`가 없으면 상태값은 마지막 상태 또는 초기 상태 기준으로 유지된다.
 
 ## 폴더 구조
 
@@ -77,6 +100,8 @@ window close
 
 - `house/env`
 - `house/mode`
+- `house/cmd/light`
+- `house/cmd/window`
 - `house/status/nodeB`
 - `house/heartbeat/nodeA`
 - `house/heartbeat/nodeB`
@@ -130,9 +155,21 @@ export MQTT_USERNAME=your-user
 export MQTT_PASSWORD=your-pass
 ```
 
+## UF2 생성 참고
+
+현재 `node_c`는 `picotool`을 통해 `uf2`까지 생성되도록 정리되어 있다.
+
+최신 빌드 산출물 예시:
+
+- `node_c/build/node_c.elf`
+- `node_c/build/node_c.bin`
+- `node_c/build/node_c.uf2`
+
+실보드 업로드 시에는 [node_c/build/node_c.uf2](/home/asd/hrd_first_project/node_c/build/node_c.uf2) 를 사용하면 된다.
+
 ## 다음 작업 후보
 
-- 버튼 입력으로 모드 전환 추가
 - MQTT reconnect / DNS 재시도 안정화
 - heartbeat payload에 uptime 또는 상태 코드 추가
+- `nodeA`, `nodeB` 실제 통합 시 상태 규격 정리
 - OLED/LCD 상태 출력 추가

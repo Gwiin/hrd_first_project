@@ -1,6 +1,6 @@
 # Node C Test Report
 
-- Test time: `2026-03-31 10:22:28 KST`
+- Test time: `2026-04-01 10:55 KST`
 - Test branch/workspace: `gwiin`, `/home/asd/hrd_first_project`
 - Tester: Codex local execution
 
@@ -14,6 +14,7 @@
 - Pico 2 W 펌웨어 빌드
 - 로컬 MQTT 브로커 동작 확인
 - 실제 Pico 2 W 실보드 MQTT 송수신 확인
+- `web_console + node_c` 단독 제어 확인
 
 ## 2. Executed Tests
 
@@ -34,6 +35,8 @@ cc -std=c11 -Wall -Wextra -I node_c/include \
 - 환경 payload 파싱
 - AUTO 임계값 기반 `LIGHT ON/OFF`, `WINDOW OPEN/CLOSE`
 - MANUAL 명령 처리
+- MQTT mode payload 처리
+- MQTT light/window payload 처리
 - `house/status/nodeC` 상태 발행
 - `nodeA`, `nodeB` timeout 경고
 
@@ -60,6 +63,43 @@ cc -std=c11 -Wall -Wextra -I node_c/include \
 판정:
 
 - `PASS`
+
+### 2-5. Web console + node_c standalone control test
+
+실행 환경:
+
+- 실제 `Pico 2 W` 보드 사용
+- `web_console` 실행
+- MQTT broker: `163.152.213.111:1883`
+- `node_a`, `node_b` 없음
+
+검증 항목:
+
+- 웹 콘솔에서 `MANUAL` 전환
+- 웹 콘솔에서 `LIGHT OFF/ON`
+- 웹 콘솔에서 `WINDOW CLOSE/OPEN`
+- 웹 콘솔에서 `AUTO` 복귀
+- `house/status/nodeC`가 즉시 반영되는지 확인
+
+실제 확인된 흐름 예시:
+
+```txt
+house/mode MANUAL
+house/status/nodeC mode=MANUAL,light=0,temp=0.0,humidity=0.0,lamp=OFF,window=CLOSE
+house/cmd/window CLOSE
+house/status/nodeC mode=MANUAL,light=0,temp=0.0,humidity=0.0,lamp=OFF,window=CLOSE
+house/cmd/window OPEN
+house/status/nodeC mode=MANUAL,light=0,temp=0.0,humidity=0.0,lamp=OFF,window=OPEN
+house/cmd/light ON
+house/status/nodeC mode=MANUAL,light=0,temp=0.0,humidity=0.0,lamp=ON,window=OPEN
+house/mode AUTO
+house/status/nodeC mode=AUTO,light=0,temp=0.0,humidity=0.0,lamp=ON,window=OPEN
+```
+
+판정:
+
+- `PASS`
+- `node_a`, `node_b` 없이도 `web_console + node_c` 조합으로 상태 확인과 수동 제어 가능
 
 ### 2-2. Local MQTT broker smoke test
 
@@ -172,22 +212,25 @@ house/heartbeat/nodeC alive
 
 - 중앙 제어 로직 정상
 - AUTO/MANUAL 전환 정상
+- MQTT mode/light/window 처리 정상
 - 환경 데이터 파싱 정상
 - 제어 명령 생성 정상
 - 상태 발행 정상
 - Pico 2 W 대상 펌웨어 빌드 정상
+- Pico 2 W 대상 `uf2` 생성 정상
 - 로컬 MQTT 브로커 동작 정상
 - 실제 Pico 2 W MQTT 송수신 정상
 - 실제 Pico 2 W AUTO 제어 정상
+- 웹 콘솔 단독 제어 정상
 
 ## 4. Remaining Real-device Test
 
 실보드에서 최종 확인이 필요한 항목:
 
-- UART 수동 명령(`mode manual`, `light on`, `window open`) 실보드 확인
 - 실제 `nodeB`와의 통합 확인
 - 실제 `nodeA`와의 통합 확인
+- 웹 콘솔 화면/상태 표시 고도화
 
 ## 5. Conclusion
 
-`node_c`는 현재 단계에서 단독 개발 및 실보드 단독 검증까지 완료된 상태이며, 핵심 기능은 이상 없이 동작했다.
+`node_c`는 현재 단계에서 단독 개발, 실보드 단독 검증, 웹 콘솔 연동 단독 검증까지 완료된 상태이며, 핵심 기능은 이상 없이 동작했다.

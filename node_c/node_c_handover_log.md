@@ -1,12 +1,12 @@
 # Node C Handover Log
 
-- 작성일시: `2026-03-31`
+- 작성일시: `2026-04-01`
 - 작성 목적: 다음 대화 또는 다음 작업 세션에서 `node_c` 개발을 끊김 없이 이어가기 위한 인수인계 문서
 - 현재 브랜치 기준: `gwiin`
 
 ## 1. 현재까지 진행한 작업 요약
 
-`node_c` 중앙관리노드의 1차 구현, 로컬 검증, 실보드 단독 검증을 완료했다.
+`node_c` 중앙관리노드 구현, 웹 콘솔 연동, 실보드 단독 검증, `web_console + node_c` 단독 제어 검증까지 완료했다.
 
 완료된 항목:
 
@@ -18,9 +18,13 @@
 - `nodeA`, `nodeB` timeout 경고 구현
 - `house/status/nodeC` 상태 발행 구현
 - `house/heartbeat/nodeC` heartbeat 발행 구현
-- Pico 2 W + Wi-Fi/MQTT 계층 골격 구현
+- Pico 2 W + Wi-Fi/MQTT 계층 구현
 - `config.h` 기반 팀 공용 설정 방식 추가
-- Pico 2 W 대상 빌드 성공 확인
+- MQTT `house/mode` 수신 처리 구현
+- MQTT `house/cmd/light`, `house/cmd/window` 수신 처리 구현
+- `web_console` Flask + MQTT 상태판 구현
+- `web_console + node_c` 단독 수동 제어 검증
+- Pico 2 W 대상 `uf2` 생성 정리
 - 로컬 스모크 테스트 문서화 완료
 - 실보드 MQTT 단독 테스트 완료
 - 실보드 AUTO 제어 테스트 완료
@@ -38,6 +42,8 @@
 - [node_c/src/main.c](/home/asd/hrd_first_project/node_c/src/main.c)
 - [node_c/tests/controller_smoke_test.c](/home/asd/hrd_first_project/node_c/tests/controller_smoke_test.c)
 - [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
+- [web_console/README.md](/home/asd/hrd_first_project/web_console/README.md)
+- [web_console/app.py](/home/asd/hrd_first_project/web_console/app.py)
 
 ## 3. 구현 상세
 
@@ -66,6 +72,12 @@
   - `light off`
   - `window open`
   - `window close`
+- MQTT 수동 제어 처리
+  - `house/mode`
+  - `house/cmd/light`
+  - `house/cmd/window`
+- `MANUAL` 모드일 때만 MQTT 수동 명령을 상태에 반영
+- `AUTO` 모드에서는 MQTT 수동 `light/window` 명령 무시
 - 상태 로그 및 상태 스냅샷 발행
 - `nodeA`, `nodeB` timeout 경고
 
@@ -89,6 +101,9 @@
 구독 토픽:
 
 - `house/env`
+- `house/mode`
+- `house/cmd/light`
+- `house/cmd/window`
 - `house/status/nodeB`
 - `house/heartbeat/nodeA`
 - `house/heartbeat/nodeB`
@@ -120,6 +135,25 @@
 - 기본은 `node_c_config.h` 값 사용
 - 필요하면 CMake 환경변수로 덮어쓰기 가능
 - MQTT 계정도 헤더/환경변수 둘 다 지원
+- `picotool` 기반 `uf2` 생성 가능하도록 정리
+
+### 3-4. 웹 콘솔
+
+파일:
+
+- [web_console/app.py](/home/asd/hrd_first_project/web_console/app.py)
+- [web_console/templates/index.html](/home/asd/hrd_first_project/web_console/templates/index.html)
+- [web_console/static/app.js](/home/asd/hrd_first_project/web_console/static/app.js)
+- [web_console/static/style.css](/home/asd/hrd_first_project/web_console/static/style.css)
+
+구현된 기능:
+
+- `house/#` 전체 구독
+- `house/env` 상태 표시
+- `house/status/nodeC` 상태 표시
+- `house/heartbeat/nodeC` 상태 표시
+- 웹 버튼으로 `house/mode`, `house/cmd/light`, `house/cmd/window` publish
+- `node_a`, `node_b` 없이도 `node_c` 단독 제어 데모 가능
 
 ## 4. 지금까지 실행한 테스트
 
@@ -135,6 +169,8 @@
 - 환경 payload 파싱
 - AUTO 제어 명령 발행
 - MANUAL 명령 처리
+- MQTT mode payload 처리
+- MQTT light/window payload 처리
 - 상태 발행
 - timeout 경고
 
@@ -177,6 +213,8 @@
 - `house/env` 수신
 - 상태 변화 시 `house/cmd/light`, `house/cmd/window` 발행
 - AUTO 제어 로직 실보드 검증
+- `web_console`에서 `MANUAL` 모드 전환 검증
+- `web_console`에서 `LIGHT/WINDOW` 수동 제어 검증
 
 결과:
 
@@ -186,7 +224,7 @@
 
 ## 5. 아직 남은 작업
 
-이제 남은 작업은 주로 통합 테스트와 보완 작업이다.
+이제 남은 작업은 주로 통합 테스트와 화면/상태 고도화다.
 
 ### 5-1. 실보드 업로드 및 연결 확인
 
@@ -195,24 +233,20 @@
 - UART 수동 명령 처리 실보드 확인
 - USB 시리얼 로그 포맷 최종 점검
 
-### 5-2. 실보드 MQTT 송수신 확인
+### 5-2. 웹 콘솔 고도화
 
-PC에서 실행:
+확인/개선 후보:
 
-```bash
-mosquitto_sub -h 163.152.213.111 -t "house/#" -v
-```
-
-확인 항목:
-
-- `MANUAL` 모드 명령 테스트
-- `nodeA`, `nodeB`와 통합 시 실제 토픽 흐름 재확인
+- 상태 카드에 `waiting env data` 표현 강화
+- `AUTO` / `MANUAL` 상태 강조 표시
+- `nodeA`, `nodeB` 미연결 상태 안내 문구 정리
 
 ### 5-3. 단독 테스트
 
 보드가 `node_c` 하나만 있어도 가능한 테스트:
 
 - UART 수동 명령 입력
+- 웹 콘솔에서 `mode/light/window` 단독 제어
 - 외부 MQTT publish로 AUTO 동작 재확인
 
 ### 5-4. 이후 개선 후보
@@ -228,7 +262,7 @@ mosquitto_sub -h 163.152.213.111 -t "house/#" -v
 
 ## 6. 내일 보드 도착 후 추천 작업 순서
 
-1. UART로 `mode manual`, `light on`, `window open` 테스트
+1. 웹 콘솔과 `node_c` 단독 데모 안정화
 2. `nodeA`와 연결해서 실제 센서값 연동 테스트
 3. `nodeB`와 연결해서 실제 액추에이터 명령 연동 테스트
 4. 세 노드 통합 테스트
@@ -240,8 +274,8 @@ mosquitto_sub -h 163.152.213.111 -t "house/#" -v
 - 현재 사용 예정 IP는 `163.152.213.111`
 - Windows 방화벽에서 `1883` inbound 허용 필요
 - `mosquitto` 브로커가 실행 중이어야 함
-- 실보드 단독 검증은 완료했지만 `nodeA`, `nodeB` 통합 검증은 아직 남아 있다
+- 실보드 단독 검증과 웹 콘솔 단독 제어는 완료했지만 `nodeA`, `nodeB` 통합 검증은 아직 남아 있다
 
 ## 8. 한 줄 결론
 
-`node_c`는 단독 기준 구현과 실보드 검증까지 완료됐고, 남은 핵심은 `nodeA`, `nodeB`와의 통합 검증`이다.
+`node_c`는 현재 `web_console + node_c` 단독 기준으로 상태 확인과 수동 제어까지 가능한 상태이며, 다음 핵심은 `nodeA`, `nodeB` 통합 검증이다.
