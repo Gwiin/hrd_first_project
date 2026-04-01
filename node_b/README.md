@@ -1,32 +1,49 @@
 # node_b
 
-Pico 2 W + Tower Pro SG90 서보 테스트용 프로젝트입니다.
+`tempservo_led.c`를 `node_c`와 통합할 때 필요한 자료만 모아둔 폴더입니다.
 
-배선:
+이 폴더의 목적:
 
-- Pico `GPIO16` -> SG90 `signal`
-- Pico `GND` -> SG90 `brown`
-- USB 5V 또는 외부 5V -> SG90 `red`
+- `node_c`가 구독/발행해야 하는 MQTT 토픽 정리
+- 허용하는 명령 형식 정리
+- 상태/센서 JSON 예시 제공
+- 통합 전에 확인할 핀, 브로커, 동작 규칙 정리
 
-주의:
+핵심 자료:
 
-- SG90는 순간 전류가 커서 USB 전원만으로도 테스트는 가능하지만 떨림이 생길 수 있습니다.
-- 더 안정적으로 돌리려면 외부 5V 전원을 쓰고, Pico와 서보의 `GND`는 반드시 공통으로 연결하세요.
-- Pico GPIO에는 서보 전원선을 직접 연결하지 말고, 신호선만 GPIO에 연결하세요.
+- `docs/tempservo_led_node_c_integration.md`
+- `docs/mqtt_examples.md`
+- `docs/node_c_checklist.md`
+- `include/tempservo_led_contract.h`
 
-현재 동작:
+현재 기준 `tempservo_led.c` 특성:
 
-- `0 -> 45 -> 90 -> 135 -> 180 -> 90` 순서로 1.5초 간격 이동
-- PWM 50Hz, GPIO16 사용
+- DHT22 온습도 센서 읽기
+- 습도 기준 자동 서보 제어
+- 자동/수동 LED 제어
+- LCD 상태 표시
+- MQTT 텍스트/JSON 동시 지원
 
-빌드 예시:
+브로커 기본값:
 
-```bash
-cd node_b
-mkdir -p build
-cd build
-cmake ..
-make -j4
-```
+- Host: `163.152.213.101`
+- Port: `1883`
 
-생성된 `node_b.uf2`를 Pico 2 W에 복사하면 됩니다.
+제어 토픽:
+
+- `/tempservo_led/servo`
+- `/tempservo_led/led`
+
+센서/상태 토픽:
+
+- `/tempservo_led/temperature`
+- `/tempservo_led/humidity`
+- `/tempservo_led/sensor`
+- `/tempservo_led/sensor/json`
+- `/tempservo_led/servo/state`
+- `/tempservo_led/servo/state/json`
+- `/tempservo_led/led/state`
+- `/tempservo_led/led/state/json`
+- `/tempservo_led/status`
+- `/tempservo_led/status/json`
+- `/tempservo_led/online`
