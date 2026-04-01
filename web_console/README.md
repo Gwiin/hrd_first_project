@@ -10,6 +10,8 @@
 - `house/heartbeat/nodeA`, `house/heartbeat/nodeB`, `house/heartbeat/nodeC` 연결 상태 표시
 - 최근 MQTT 송수신 로그 표시
 - 웹 버튼으로 액추에이터/모드 명령 publish
+- `node_b + node_c` 통합 상태 확인 가능
+- `node_a + node_b + node_c` 전체 상태 확인 가능
 
 ## 폴더 구조
 
@@ -72,3 +74,5 @@ export WEB_CONSOLE_PORT=5000
 
 - 현재 웹 콘솔은 `house/mode`, `house/cmd/light`, `house/cmd/window`를 publish 할 수 있다.
 - `node_c`는 `house/mode`를 구독해서 `AUTO` / `MANUAL` 전환을 처리하도록 맞춰져 있다.
+- 현재 통합 기준으로 `Controller` 카드는 `node_c`, `Actuator` 카드는 `node_b` 상태를 표시한다.
+- `Environment` 카드는 `node_a`가 발행한 `house/env`를 표시한다.
