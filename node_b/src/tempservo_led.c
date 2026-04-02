@@ -52,15 +52,27 @@
 #define NODE_B_LOG_BUFFER_SIZE 160
 #define NODE_B_HEARTBEAT_INTERVAL_MS 2000
 
-#define SERVO_PIN 14
+#define WINDOW_SERVO_PRIMARY_PIN 14
+#define WINDOW_SERVO_SECONDARY_PIN 15
 #define LED_PIN 16
 #define WS2812_LED_COUNT 8
 #define WS2812_FREQ 800000
 #define WS2812_RGBW false
 #define WS2812_COLOR_WHITE 0x00ffffffu
 #define PWM_WRAP 20000
-#define SERVO_CLOSED_US 500
-#define SERVO_OPEN_US 2400
+#define WINDOW_SERVO_PRIMARY_CLOSED_US 500
+#define WINDOW_SERVO_PRIMARY_OPEN_US 2400
+#define WINDOW_SERVO_SECONDARY_CLOSED_US WINDOW_SERVO_PRIMARY_OPEN_US
+#define WINDOW_SERVO_SECONDARY_OPEN_US WINDOW_SERVO_PRIMARY_CLOSED_US
+#define WINDOW_SERVO_STAGGER_MS 120
+
+typedef struct {
+    uint pin;
+    uint slice;
+    uint channel;
+    uint16_t closed_us;
+    uint16_t open_us;
+} window_servo_t;
 
 typedef struct {
     mqtt_client_t *client;
@@ -78,10 +90,21 @@ typedef struct {
 
 static node_b_state_t g_state;
 static bool g_cyw43_inited;
-static uint g_servo_slice;
 static PIO g_led_pio;
 static uint g_led_sm;
 static uint g_led_offset;
+static window_servo_t g_window_servos[] = {
+    {
+        .pin = WINDOW_SERVO_PRIMARY_PIN,
+        .closed_us = WINDOW_SERVO_PRIMARY_CLOSED_US,
+        .open_us = WINDOW_SERVO_PRIMARY_OPEN_US,
+    },
+    {
+        .pin = WINDOW_SERVO_SECONDARY_PIN,
+        .closed_us = WINDOW_SERVO_SECONDARY_CLOSED_US,
+        .open_us = WINDOW_SERVO_SECONDARY_OPEN_US,
+    },
+};
 
 static void node_b_log(const char *fmt, ...)
 {
@@ -98,19 +121,60 @@ static void node_b_log(const char *fmt, ...)
 static void servo_init(void)
 {
     pwm_config config;
-
-    gpio_set_function(SERVO_PIN, GPIO_FUNC_PWM);
-    g_servo_slice = pwm_gpio_to_slice_num(SERVO_PIN);
+    bool slice_initialized[NUM_PWM_SLICES] = {false};
+    size_t servo_count = sizeof(g_window_servos) / sizeof(g_window_servos[0]);
 
     config = pwm_get_default_config();
     pwm_config_set_clkdiv(&config, 125.0f);
     pwm_config_set_wrap(&config, PWM_WRAP - 1);
-    pwm_init(g_servo_slice, &config, true);
+
+    for (size_t i = 0; i < servo_count; ++i) {
+        uint slice = 0;
+
+        gpio_set_function(g_window_servos[i].pin, GPIO_FUNC_PWM);
+        slice = pwm_gpio_to_slice_num(g_window_servos[i].pin);
+        g_window_servos[i].slice = slice;
+        g_window_servos[i].channel = pwm_gpio_to_channel(g_window_servos[i].pin);
+
+        if (!slice_initialized[slice]) {
+            pwm_init(slice, &config, true);
+            slice_initialized[slice] = true;
+        }
+    }
+}
+
+static void servo_apply_pulse_us(const window_servo_t *servo, uint16_t pulse_us)
+{
+    if (servo == NULL) {
+        return;
+    }
+
+    pwm_set_chan_level(servo->slice, servo->channel, pulse_us);
 }
 
 static void servo_set_open(bool open)
 {
-    pwm_set_gpio_level(SERVO_PIN, open ? SERVO_OPEN_US : SERVO_CLOSED_US);
+    size_t servo_count = sizeof(g_window_servos) / sizeof(g_window_servos[0]);
+
+    if (servo_count >= 2) {
+        servo_apply_pulse_us(
+            &g_window_servos[1],
+            open ? g_window_servos[1].open_us : g_window_servos[1].closed_us
+        );
+        sleep_ms(WINDOW_SERVO_STAGGER_MS);
+        servo_apply_pulse_us(
+            &g_window_servos[0],
+            open ? g_window_servos[0].open_us : g_window_servos[0].closed_us
+        );
+        return;
+    }
+
+    for (size_t i = 0; i < servo_count; ++i) {
+        servo_apply_pulse_us(
+            &g_window_servos[i],
+            open ? g_window_servos[i].open_us : g_window_servos[i].closed_us
+        );
+    }
 }
 
 static void ws2812_put_pixel(uint32_t rgb)
@@ -268,7 +332,13 @@ static void set_window_state(bool window_open, const char *reason)
 
     g_state.window_open = window_open;
     servo_set_open(window_open);
-    node_b_log("[NODE_B] WINDOW %s (%s)", window_name(window_open), reason);
+    node_b_log(
+        "[NODE_B] WINDOW %s (%s, dual-servo casement GP%d/GP%d)",
+        window_name(window_open),
+        reason,
+        WINDOW_SERVO_PRIMARY_PIN,
+        WINDOW_SERVO_SECONDARY_PIN
+    );
     publish_status_snapshot();
 }
 
@@ -431,6 +501,19 @@ int main(void)
 
     node_b_log("[NODE_B] Boot start");
     node_b_log("[NODE_B] Broker %s:%d", MQTT_SERVER, MQTT_PORT);
+    node_b_log(
+        "[NODE_B] Window servos primary GP%d secondary GP%d (mirrored)",
+        WINDOW_SERVO_PRIMARY_PIN,
+        WINDOW_SERVO_SECONDARY_PIN
+    );
+    node_b_log(
+        "[NODE_B] Servo channels primary slice %u ch %u, secondary slice %u ch %u, stagger %dms",
+        g_window_servos[0].slice,
+        g_window_servos[0].channel,
+        g_window_servos[1].slice,
+        g_window_servos[1].channel,
+        WINDOW_SERVO_STAGGER_MS
+    );
 
     if (cyw43_arch_init()) {
         panic("cyw43_arch_init failed");
