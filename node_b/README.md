@@ -23,6 +23,8 @@
 - `GP15` 서보는 반대 방향 펄스폭으로 동작
 - 같은 MQTT `house/cmd/window` 명령 하나로 두 서보가 동시에 움직여 양쪽 창짝을 함께 연다/닫는다
 - 듀얼 서보 전류 피크를 줄이기 위해 펌웨어에서 `secondary -> primary` 순으로 약간의 시간차를 두고 구동한다
+- 서보는 목표 각도로 즉시 점프하지 않고, 작은 펄스폭 단계로 나눠 조금 더 부드럽고 천천히 이동한다
+- 현재 기본 `OPEN` 목표값은 풀오픈이 아니라 대략 `100도` 열림 기준으로 조정되어 있다
 
 현재 검증된 통합 흐름:
 
@@ -84,3 +86,7 @@ make -j4
 - [tempservo_led_contract.h](/home/asd/hrd_first_project/node_b/include/tempservo_led_contract.h)
 - [node_b_config.h](/home/asd/hrd_first_project/node_b/include/node_b_config.h)
 - [lwipopts.h](/home/asd/hrd_first_project/node_b/lwipopts.h)
+
+속도 조절 팁:
+
+- 더 천천히 움직이게 하려면 [tempservo_led.c](/home/asd/hrd_first_project/node_b/src/tempservo_led.c) 의 `WINDOW_SERVO_STEP_US` 값을 더 작게 하거나 `WINDOW_SERVO_STEP_DELAY_MS` 값을 더 크게 조정하면 된다

@@ -61,10 +61,12 @@
 #define WS2812_COLOR_WHITE 0x00ffffffu
 #define PWM_WRAP 20000
 #define WINDOW_SERVO_PRIMARY_CLOSED_US 500
-#define WINDOW_SERVO_PRIMARY_OPEN_US 2400
+#define WINDOW_SERVO_PRIMARY_OPEN_US 1560
 #define WINDOW_SERVO_SECONDARY_CLOSED_US 2400
-#define WINDOW_SERVO_SECONDARY_OPEN_US 500
+#define WINDOW_SERVO_SECONDARY_OPEN_US 1340
 #define WINDOW_SERVO_STAGGER_MS 120
+#define WINDOW_SERVO_STEP_US 40
+#define WINDOW_SERVO_STEP_DELAY_MS 15
 
 typedef struct {
     uint pin;
@@ -72,6 +74,7 @@ typedef struct {
     uint channel;
     uint16_t closed_us;
     uint16_t open_us;
+    uint16_t current_us;
 } window_servo_t;
 
 typedef struct {
@@ -143,37 +146,102 @@ static void servo_init(void)
     }
 }
 
-static void servo_apply_pulse_us(const window_servo_t *servo, uint16_t pulse_us)
+static void servo_apply_pulse_us(window_servo_t *servo, uint16_t pulse_us)
 {
     if (servo == NULL) {
         return;
     }
 
     pwm_set_chan_level(servo->slice, servo->channel, pulse_us);
+    servo->current_us = pulse_us;
+}
+
+static uint16_t servo_target_pulse_us(const window_servo_t *servo, bool open)
+{
+    if (servo == NULL) {
+        return 0;
+    }
+
+    return open ? servo->open_us : servo->closed_us;
+}
+
+static bool servo_move_one_step(window_servo_t *servo, uint16_t target_us)
+{
+    int32_t next_us = 0;
+
+    if (servo == NULL) {
+        return false;
+    }
+
+    if (servo->current_us == 0) {
+        servo_apply_pulse_us(servo, target_us);
+        return false;
+    }
+
+    if (servo->current_us == target_us) {
+        return false;
+    }
+
+    if (servo->current_us < target_us) {
+        next_us = (int32_t) servo->current_us + WINDOW_SERVO_STEP_US;
+        if (next_us > (int32_t) target_us) {
+            next_us = target_us;
+        }
+    } else {
+        next_us = (int32_t) servo->current_us - WINDOW_SERVO_STEP_US;
+        if (next_us < (int32_t) target_us) {
+            next_us = target_us;
+        }
+    }
+
+    servo_apply_pulse_us(servo, (uint16_t) next_us);
+    return (uint16_t) next_us != target_us;
 }
 
 static void servo_set_open(bool open)
 {
     size_t servo_count = sizeof(g_window_servos) / sizeof(g_window_servos[0]);
+    uint16_t targets[sizeof(g_window_servos) / sizeof(g_window_servos[0])];
+    uint16_t start_delays_ms[sizeof(g_window_servos) / sizeof(g_window_servos[0])] = {0};
+    uint64_t start_ms = to_ms_since_boot(get_absolute_time());
+    bool movement_pending = false;
 
-    if (servo_count >= 2) {
-        servo_apply_pulse_us(
-            &g_window_servos[1],
-            open ? g_window_servos[1].open_us : g_window_servos[1].closed_us
-        );
-        sleep_ms(WINDOW_SERVO_STAGGER_MS);
-        servo_apply_pulse_us(
-            &g_window_servos[0],
-            open ? g_window_servos[0].open_us : g_window_servos[0].closed_us
-        );
+    if (servo_count == 0) {
         return;
     }
 
     for (size_t i = 0; i < servo_count; ++i) {
-        servo_apply_pulse_us(
-            &g_window_servos[i],
-            open ? g_window_servos[i].open_us : g_window_servos[i].closed_us
-        );
+        targets[i] = servo_target_pulse_us(&g_window_servos[i], open);
+    }
+
+    if (servo_count >= 2) {
+        start_delays_ms[0] = WINDOW_SERVO_STAGGER_MS;
+    }
+
+    do {
+        uint64_t elapsed_ms = to_ms_since_boot(get_absolute_time()) - start_ms;
+
+        movement_pending = false;
+        for (size_t i = 0; i < servo_count; ++i) {
+            if (elapsed_ms < start_delays_ms[i]) {
+                movement_pending = true;
+                continue;
+            }
+
+            if (servo_move_one_step(&g_window_servos[i], targets[i])) {
+                movement_pending = true;
+            }
+        }
+
+        if (movement_pending) {
+            sleep_ms(WINDOW_SERVO_STEP_DELAY_MS);
+        }
+    } while (movement_pending);
+
+    for (size_t i = 0; i < servo_count; ++i) {
+        if (g_window_servos[i].current_us != targets[i]) {
+            servo_apply_pulse_us(&g_window_servos[i], targets[i]);
+        }
     }
 }
 
@@ -507,12 +575,14 @@ int main(void)
         WINDOW_SERVO_SECONDARY_PIN
     );
     node_b_log(
-        "[NODE_B] Servo channels primary slice %u ch %u, secondary slice %u ch %u, stagger %dms",
+        "[NODE_B] Servo channels primary slice %u ch %u, secondary slice %u ch %u, stagger %dms, step %dus/%dms",
         g_window_servos[0].slice,
         g_window_servos[0].channel,
         g_window_servos[1].slice,
         g_window_servos[1].channel,
-        WINDOW_SERVO_STAGGER_MS
+        WINDOW_SERVO_STAGGER_MS,
+        WINDOW_SERVO_STEP_US,
+        WINDOW_SERVO_STEP_DELAY_MS
     );
 
     if (cyw43_arch_init()) {
