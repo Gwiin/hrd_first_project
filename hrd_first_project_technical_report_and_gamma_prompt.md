@@ -8,7 +8,7 @@
 - `node_a`, `node_b`, `node_c`, `web_console`로 분리된 구조
 - `house/env`, `house/mode`, `house/cmd/light`, `house/cmd/window` 중심의 MQTT 설계
 - `AUTO / MANUAL` 모드 분리
-- `WS2812` 조명 제어와 듀얼 서보 창문 제어
+- `WS2812` 조명 제어와 싱글 서보 창문 제어
 - heartbeat 및 status snapshot 기반 모니터링 구조
 
 다만 발표 자료 기준으로는 아래 항목이 더 선명하게 들어가야 완성도가 높아진다.
@@ -87,7 +87,7 @@ MQTT 기반 스마트 환경제어 하우스 분산 제어 시스템
 | 팀원 | 주요 담당 | 실제 수행 내용 |
 |---|---|---|
 | 정귀인 | 중앙 제어 및 통합 | `node_c` 제어 로직 구현, MQTT 연동, 웹 콘솔 개발, 통합 테스트 정리, 기술서 작성 |
-| 황지용 | 액추에이터 및 하드웨어 | `node_b` 액추에이터 노드 구현, WS2812 및 듀얼 서보 제어, 배선 및 모형 제작 |
+| 황지용 | 액추에이터 및 하드웨어 | `node_b` 액추에이터 노드 구현, WS2812 및 싱글 서보 제어, 배선 및 모형 제작 |
 | 김도경 | 센서 및 발표 자료 | `node_a` 센서 노드 작업, 센서 실습 및 연동 지원, PPT 초안 작성, 모형 제작 |
 
 주의할 점은 발표 때 "누가 무엇을 만들었는지"가 보이되, 최종 결과는 협업 산출물이라는 점을 함께 강조하는 것이다.
@@ -103,11 +103,10 @@ MQTT 기반 스마트 환경제어 하우스 분산 제어 시스템
 `node_a`는 조도, 온도, 습도를 읽어 `house/env` 토픽으로 발행한다.
 
 ### 2.4.2 node_b 하드웨어
-- `SG90 servo primary`: `GP14`
-- `SG90 servo secondary`: `GP15`
+- `SG90 servo`: `GP14`
 - `WS2812 data pin`: `GP16`
 
-최신 구현 기준으로 창문 제어는 단일 서보가 아니라 듀얼 서보 카세먼트 구조로 구현되어 있다. 두 번째 서보는 반대 방향으로 동작하며, 전류 피크를 줄이기 위해 `secondary -> primary` 순으로 약간의 시간차를 두고 구동한다.
+최신 구현 기준으로 창문 제어는 `SG90` 서보모터 1개를 사용한다. 창문 회전축과 서보모터 회전축 차이를 고려해 구조를 설계했으며, 서보 각도를 조절해 자동 개폐를 표현한다.
 
 조명은 단순 LED가 아니라 `WS2812 RGB Strip` 8픽셀 전체를 제어한다. `ON`이면 전체 흰색 점등, `OFF`이면 전체 소등된다.
 
@@ -124,7 +123,7 @@ MQTT 기반 스마트 환경제어 하우스 분산 제어 시스템
 - 점퍼선
 
 ### 2.4.5 전원 및 배선 고려사항
-- 듀얼 서보는 외부 `5V` 전원 사용 권장
+- 서보는 외부 `5V` 전원 사용 권장
 - Pico와 서보의 `GND`는 공통으로 연결 필요
 - `WS2812`는 데이터선뿐 아니라 전원 안정성도 중요
 
@@ -159,7 +158,7 @@ light=250,temp=29.5,humidity=72.0
 - `house/cmd/light` 구독
 - `house/cmd/window` 구독
 - `WS2812` 8픽셀 전체 ON/OFF
-- 듀얼 서보 기반 창문 OPEN/CLOSE
+- 싱글 서보 기반 창문 OPEN/CLOSE
 - `house/status/nodeB` 발행
 - `house/heartbeat/nodeB` 발행
 
@@ -368,18 +367,17 @@ snprintf(payload, sizeof(payload), "mode=%s,light=%d,temp=%.1f,humidity=%.1f,lam
 이 기능은 발표에서 "운영 관점의 설계"로 설명하기 좋다.
 
 ### 2.8.6 실제 하드웨어 구동 코드
-`node_b`에서는 명령을 받은 뒤 단순 상태 변경만 하는 것이 아니라, WS2812와 듀얼 서보를 실제로 구동한다.
+`node_b`에서는 명령을 받은 뒤 단순 상태 변경만 하는 것이 아니라, WS2812와 서보를 실제로 구동한다.
 
 ```c
-if (servo_count >= 2) {
-    servo_apply_pulse_us(&g_window_servos[1], open ? g_window_servos[1].open_us : g_window_servos[1].closed_us);
-    sleep_ms(WINDOW_SERVO_STAGGER_MS);
-    servo_apply_pulse_us(&g_window_servos[0], open ? g_window_servos[0].open_us : g_window_servos[0].closed_us);
-    return;
+if (servo->current_us < target_us) {
+    next_us = (int32_t) servo->current_us + WINDOW_SERVO_STEP_US;
+} else {
+    next_us = (int32_t) servo->current_us - WINDOW_SERVO_STEP_US;
 }
 ```
 
-위 코드는 [tempservo_led.c](/Users/jeong-gwiin/hrd_first_project/node_b/src/tempservo_led.c#L155) 에 있고, 듀얼 서보를 시간차로 움직여 전류 피크를 줄이는 부분이다.
+위 코드는 [tempservo_led.c](/Users/jeong-gwiin/hrd_first_project/node_b/src/tempservo_led.c#L168) 에 있으며, 서보를 목표 각도로 한 번에 점프시키지 않고 단계적으로 이동시키는 흐름을 보여준다.
 
 ```c
 g_state.lamp_on = lamp_on;
@@ -387,7 +385,7 @@ ws2812_fill(lamp_on ? WS2812_COLOR_WHITE : 0);
 publish_status_snapshot();
 ```
 
-이 부분은 [tempservo_led.c](/Users/jeong-gwiin/hrd_first_project/node_b/src/tempservo_led.c#L315) 에 있으며, 조명 상태를 실제 LED 스트립에 반영하고 즉시 상태를 다시 발행하는 흐름을 보여준다.
+이 부분은 [tempservo_led.c](/Users/jeong-gwiin/hrd_first_project/node_b/src/tempservo_led.c#L392) 에 있으며, 조명 상태를 실제 LED 스트립에 반영하고 즉시 상태를 다시 발행하는 흐름을 보여준다.
 
 발표에서는 코드를 전부 읽기보다 아래처럼 요약하면 좋다.
 
@@ -425,7 +423,7 @@ publish_status_snapshot();
 - 중앙 정책 기반 자동 제어
 - 웹 콘솔 기반 시각적 모니터링
 - heartbeat와 status snapshot을 포함한 운영형 구조
-- WS2812와 듀얼 서보를 활용한 실제 동작 중심 구현
+- WS2812와 싱글 서보를 활용한 실제 동작 중심 구현
 
 ---
 
@@ -551,12 +549,12 @@ MQTT 기반 분산 제어 시스템
 - CDS 조도 센서
 - DHT 계열 온습도 센서
 - WS2812 RGB Strip
-- SG90 서보모터 2개
+- SG90 서보모터 1개
 - 브레드보드, 점퍼선
 
 핀 구성:
 - node_a: GP15 DHT, GP27 CDS
-- node_b: GP14 1번 서보, GP15 2번 서보, GP16 WS2812
+- node_b: GP14 서보, GP16 WS2812
 - node_c: 중앙 제어용 Pico 2 W
 
 MQTT 주요 토픽:
@@ -572,7 +570,7 @@ MQTT 주요 토픽:
 
 팀원 역할:
 - 정귀인: node_c 중앙 제어 로직, MQTT 연동, 웹 콘솔 개발, 통합 테스트 정리
-- 황지용: node_b 액추에이터 노드 구현, WS2812 및 듀얼 서보 제어, 하드웨어 배선 및 모형 제작
+- 황지용: node_b 액추에이터 노드 구현, WS2812 및 싱글 서보 제어, 하드웨어 배선 및 모형 제작
 - 김도경: node_a 센서 노드 작업, 센서 실습 및 연동 지원, PPT 초안 작성, 모형 제작
 
 테스트 및 구현 결과:
@@ -622,9 +620,9 @@ MQTT 주요 토픽:
 - 구현, 통합, 문서화, 모형 제작을 균형 있게 보여줄 것
 
 6. 하드웨어 및 개발 환경
-- Pico 2 W 3대, CDS, DHT, WS2812, 듀얼 서보, Flask, MQTT, C, Python 등을 표로 정리
+- Pico 2 W 3대, CDS, DHT, WS2812, 싱글 서보, Flask, MQTT, C, Python 등을 표로 정리
 - node_a / node_b / node_c 핀 구성도 간단히 포함
-- WS2812 8픽셀 제어와 듀얼 서보 카세먼트 구조를 강조
+- WS2812 8픽셀 제어와 싱글 서보 기반 창문 구동을 강조
 
 7. MQTT 통신 구조
 - 주요 토픽을 표로 정리
@@ -676,7 +674,7 @@ MQTT 주요 토픽:
 - 추천 코드 예시는 아래 성격을 반영할 것:
   - node_c의 AUTO 제어 조건문
   - node_c의 AUTO 모드 수동 명령 차단 함수
-  - node_b의 듀얼 서보 또는 WS2812 제어 부분
+  - node_b의 서보 또는 WS2812 제어 부분
 - 코드 전체를 길게 넣지 말고 핵심 로직만 짧게 강조할 것
 
 11. 테스트 결과 및 프로젝트 강점
@@ -686,7 +684,7 @@ MQTT 주요 토픽:
   - 역할 분리가 명확한 분산 구조
   - MQTT 기반 확장성
   - 운영 상태 확인이 가능한 heartbeat 구조
-  - 실제 동작성이 높은 WS2812 + 듀얼 서보 구현
+  - 실제 동작성이 높은 WS2812 + 싱글 서보 구현
 - 로그 캡처나 결과 카드가 들어갈 자리도 고려
 
 12. 한계점, 향후 계획, 결론

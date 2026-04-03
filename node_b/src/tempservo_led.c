@@ -52,19 +52,15 @@
 #define NODE_B_LOG_BUFFER_SIZE 160
 #define NODE_B_HEARTBEAT_INTERVAL_MS 2000
 
-#define WINDOW_SERVO_PRIMARY_PIN 14
-#define WINDOW_SERVO_SECONDARY_PIN 15
+#define WINDOW_SERVO_PIN 14
 #define LED_PIN 16
 #define WS2812_LED_COUNT 8
 #define WS2812_FREQ 800000
 #define WS2812_RGBW false
 #define WS2812_COLOR_WHITE 0x00ffffffu
 #define PWM_WRAP 20000
-#define WINDOW_SERVO_PRIMARY_CLOSED_US 500
-#define WINDOW_SERVO_PRIMARY_OPEN_US 1560
-#define WINDOW_SERVO_SECONDARY_CLOSED_US 2400
-#define WINDOW_SERVO_SECONDARY_OPEN_US 1340
-#define WINDOW_SERVO_STAGGER_MS 120
+#define WINDOW_SERVO_CLOSED_US 500
+#define WINDOW_SERVO_OPEN_US 1560
 #define WINDOW_SERVO_STEP_US 40
 #define WINDOW_SERVO_STEP_DELAY_MS 15
 
@@ -98,14 +94,9 @@ static uint g_led_sm;
 static uint g_led_offset;
 static window_servo_t g_window_servos[] = {
     {
-        .pin = WINDOW_SERVO_PRIMARY_PIN,
-        .closed_us = WINDOW_SERVO_PRIMARY_CLOSED_US,
-        .open_us = WINDOW_SERVO_PRIMARY_OPEN_US,
-    },
-    {
-        .pin = WINDOW_SERVO_SECONDARY_PIN,
-        .closed_us = WINDOW_SERVO_SECONDARY_CLOSED_US,
-        .open_us = WINDOW_SERVO_SECONDARY_OPEN_US,
+        .pin = WINDOW_SERVO_PIN,
+        .closed_us = WINDOW_SERVO_CLOSED_US,
+        .open_us = WINDOW_SERVO_OPEN_US,
     },
 };
 
@@ -202,8 +193,6 @@ static void servo_set_open(bool open)
 {
     size_t servo_count = sizeof(g_window_servos) / sizeof(g_window_servos[0]);
     uint16_t targets[sizeof(g_window_servos) / sizeof(g_window_servos[0])];
-    uint16_t start_delays_ms[sizeof(g_window_servos) / sizeof(g_window_servos[0])] = {0};
-    uint64_t start_ms = to_ms_since_boot(get_absolute_time());
     bool movement_pending = false;
 
     if (servo_count == 0) {
@@ -214,20 +203,9 @@ static void servo_set_open(bool open)
         targets[i] = servo_target_pulse_us(&g_window_servos[i], open);
     }
 
-    if (servo_count >= 2) {
-        start_delays_ms[0] = WINDOW_SERVO_STAGGER_MS;
-    }
-
     do {
-        uint64_t elapsed_ms = to_ms_since_boot(get_absolute_time()) - start_ms;
-
         movement_pending = false;
         for (size_t i = 0; i < servo_count; ++i) {
-            if (elapsed_ms < start_delays_ms[i]) {
-                movement_pending = true;
-                continue;
-            }
-
             if (servo_move_one_step(&g_window_servos[i], targets[i])) {
                 movement_pending = true;
             }
@@ -401,11 +379,10 @@ static void set_window_state(bool window_open, const char *reason)
     g_state.window_open = window_open;
     servo_set_open(window_open);
     node_b_log(
-        "[NODE_B] WINDOW %s (%s, dual-servo casement GP%d/GP%d)",
+        "[NODE_B] WINDOW %s (%s, single-servo GP%d)",
         window_name(window_open),
         reason,
-        WINDOW_SERVO_PRIMARY_PIN,
-        WINDOW_SERVO_SECONDARY_PIN
+        WINDOW_SERVO_PIN
     );
     publish_status_snapshot();
 }
@@ -570,17 +547,13 @@ int main(void)
     node_b_log("[NODE_B] Boot start");
     node_b_log("[NODE_B] Broker %s:%d", MQTT_SERVER, MQTT_PORT);
     node_b_log(
-        "[NODE_B] Window servos primary GP%d secondary GP%d (mirrored)",
-        WINDOW_SERVO_PRIMARY_PIN,
-        WINDOW_SERVO_SECONDARY_PIN
+        "[NODE_B] Window servo GP%d",
+        WINDOW_SERVO_PIN
     );
     node_b_log(
-        "[NODE_B] Servo channels primary slice %u ch %u, secondary slice %u ch %u, stagger %dms, step %dus/%dms",
+        "[NODE_B] Servo channel slice %u ch %u, step %dus/%dms",
         g_window_servos[0].slice,
         g_window_servos[0].channel,
-        g_window_servos[1].slice,
-        g_window_servos[1].channel,
-        WINDOW_SERVO_STAGGER_MS,
         WINDOW_SERVO_STEP_US,
         WINDOW_SERVO_STEP_DELAY_MS
     );

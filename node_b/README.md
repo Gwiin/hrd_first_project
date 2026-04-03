@@ -5,7 +5,7 @@
 현재 포함된 기능:
 
 - `house/cmd/light` 구독 후 LED ON/OFF
-- `house/cmd/window` 구독 후 듀얼 서보 OPEN/CLOSE
+- `house/cmd/window` 구독 후 서보 OPEN/CLOSE
 - `house/status/nodeB` 상태 스냅샷 발행
 - `house/heartbeat/nodeB` heartbeat 발행
 - Pico W Wi-Fi / MQTT 기반 실보드 동작
@@ -13,16 +13,13 @@
 
 현재 하드웨어 기준:
 
-- SG90 servo primary: `GP14`
-- SG90 servo secondary: `GP15`
+- SG90 servo: `GP14`
 - WS2812 data pin: `GP16`
 
-카세먼트 창 기준 서보 동작:
+현재 창문 제어 기준 서보 동작:
 
-- `GP14` 서보는 기존 방향으로 `OPEN/CLOSE`
-- `GP15` 서보는 반대 방향 펄스폭으로 동작
-- 같은 MQTT `house/cmd/window` 명령 하나로 두 서보가 동시에 움직여 양쪽 창짝을 함께 연다/닫는다
-- 듀얼 서보 전류 피크를 줄이기 위해 펌웨어에서 `secondary -> primary` 순으로 약간의 시간차를 두고 구동한다
+- `GP14` 서보 1개로 `OPEN/CLOSE` 상태를 표현한다
+- 같은 MQTT `house/cmd/window` 명령 하나로 창문 개폐를 제어한다
 - 서보는 목표 각도로 즉시 점프하지 않고, 작은 펄스폭 단계로 나눠 조금 더 부드럽고 천천히 이동한다
 - 현재 기본 `OPEN` 목표값은 풀오픈이 아니라 대략 `100도` 열림 기준으로 조정되어 있다
 
@@ -58,11 +55,11 @@ WS2812 메모:
 - `WS2812`는 단순 `gpio_put()`로 제어되지 않으므로 PIO 기반 신호 생성 방식으로 수정 완료
 - 배선 시 `DIN -> GP16`, `VCC -> 5V`, `GND -> 공통 GND` 연결 필요
 
-듀얼 서보 배선 메모:
+서보 배선 메모:
 
-- 두 서보의 `VCC`는 Pico 보드 핀 전원만으로 부족할 수 있으므로 외부 `5V` 전원 사용 권장
-- 두 서보와 Pico의 `GND`는 반드시 공통으로 묶어야 한다
-- 웹 콘솔에서 `Window Open/Close`를 눌렀는데 한쪽만 움직이면 배선보다 먼저 전원 용량과 공통 GND를 확인하는 것이 좋다
+- 서보의 `VCC`는 Pico 보드 핀 전원만으로 부족할 수 있으므로 외부 `5V` 전원 사용 권장
+- 서보와 Pico의 `GND`는 반드시 공통으로 묶어야 한다
+- 웹 콘솔에서 `Window Open/Close`를 눌렀는데 동작이 불안정하면 배선보다 먼저 전원 용량과 공통 GND를 확인하는 것이 좋다
 
 기본 브로커 설정은 [node_b_config.h](/home/asd/hrd_first_project/node_b/include/node_b_config.h) 에 있으며, 필요하면 `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_SERVER` 환경변수로 빌드 시 덮어쓸 수 있습니다.
 
