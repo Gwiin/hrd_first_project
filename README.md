@@ -19,9 +19,19 @@
 - [node_a/README.md](/home/asd/hrd_first_project/node_a/README.md)
 - [node_b/README.md](/home/asd/hrd_first_project/node_b/README.md)
 - [node_c/README.md](/home/asd/hrd_first_project/node_c/README.md)
-- [node_c/node_c_handover_log.md](/home/asd/hrd_first_project/node_c/node_c_handover_log.md)
-- [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
+- [node_c_handover_log.md](/home/asd/hrd_first_project/doc/records/node_c_handover_log.md)
+- [node_c_test_report.md](/home/asd/hrd_first_project/doc/records/node_c_test_report.md)
 - [web_console/README.md](/home/asd/hrd_first_project/web_console/README.md)
+
+## 문서 구조
+
+정리된 문서 기준은 아래와 같다.
+
+- 최종 기술서: [technical_report_final.md](/home/asd/hrd_first_project/technical_report_final.md)
+- 제출용 산출물: [doc](/home/asd/hrd_first_project/doc)
+- 발표 PPT 원본: [Google Slides](https://docs.google.com/presentation/d/1R45DuB6OwmKBrmp_745zJRG9Q-2IM64A/edit?usp=sharing&ouid=104259440679965935727&rtpof=true&sd=true)
+- 초안/프롬프트 참고 문서: [doc/reference](/home/asd/hrd_first_project/doc/reference)
+- 개발 기록/테스트 기록: [doc/records](/home/asd/hrd_first_project/doc/records)
 
 ## 각 노드 펌웨어 UF2 위치
 
@@ -103,7 +113,11 @@ export WEB_CONSOLE_PORT=5000
 |||오후|정귀인|기술서 및 PPT 자료 제작 및 문서화|
 ||||황지용|모형 제작 및 실행 테스트|
 ||||김도경|모형 제작 및 실행 테스트|
-|4/3|금|오전|||
-|||오후|||
+|4/3|금|오전|정귀인|기술서 작성 및 ppt 최종 검토|
+||||황지용|모형 완성 및 시연영상 촬영|
+||||김도경|모형 제작 재료 조달|
+|||오후|정귀인|최종 검토 및 발표|
+||||황지용|최종 문서 검토|
+||||김도경|최종 문서 검토|
 
 ---

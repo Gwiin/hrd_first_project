@@ -46,7 +46,7 @@
 - [node_c/src/node_c_network.c](/home/asd/hrd_first_project/node_c/src/node_c_network.c)
 - [node_c/src/main.c](/home/asd/hrd_first_project/node_c/src/main.c)
 - [node_c/tests/controller_smoke_test.c](/home/asd/hrd_first_project/node_c/tests/controller_smoke_test.c)
-- [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md)
+- [node_c_test_report.md](/home/asd/hrd_first_project/doc/records/node_c_test_report.md)
 - [web_console/README.md](/home/asd/hrd_first_project/web_console/README.md)
 - [web_console/app.py](/home/asd/hrd_first_project/web_console/app.py)
 
@@ -268,7 +268,7 @@ house/heartbeat/nodeC alive
 - `PASS`
 - `node_c` AUTO 판단과 `node_b` 액추에이터 반영이 MQTT를 통해 정상 연동됨
 
-상세는 [node_c/node_c_test_report.md](/home/asd/hrd_first_project/node_c/node_c_test_report.md) 참고
+상세는 [node_c_test_report.md](/home/asd/hrd_first_project/doc/records/node_c_test_report.md) 참고
 
 ## 5. 아직 남은 작업
 
