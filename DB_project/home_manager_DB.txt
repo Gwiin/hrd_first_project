@@ -292,6 +292,23 @@ INSERT INTO ROOM_RESERVATION
 (5, 3, 4, '2026-05-05 10:00:00', '2026-05-05 12:00:00', '온라인수업', 'RESERVED');
 
 
+-- =============================================
+-- 1. 전체 테이블 기본 조회
+-- 더미 데이터 입력 확인
+-- =============================================
+SELECT * FROM ROOM;
+SELECT * FROM USER_ROLE;
+SELECT * FROM `USER`;
+SELECT * FROM SENSOR_TYPE;
+SELECT * FROM SENSOR;
+SELECT * FROM SENSOR_READING;
+SELECT * FROM ACTUATOR_TYPE;
+SELECT * FROM ACTUATOR;
+SELECT * FROM ACTUATOR_STATE_LOG;
+SELECT * FROM ROOM_STATUS_TYPE;
+SELECT * FROM ROOM_STATUS_LOG;
+SELECT * FROM USER_LOCATION;
+SELECT * FROM ROOM_RESERVATION;
 
 
 -- =========================================================
@@ -321,7 +338,7 @@ JOIN ROOM r
     ON s.room_id = r.room_id
 JOIN SENSOR_TYPE st
     ON s.sensor_type_id = st.sensor_type_id
-ORDER BY r.room_id, s.sensor_id;
+ORDER BY r.room_id;
 
 -- =========================================================
 -- 3.방별 설치된 액추에이터 조회
@@ -336,7 +353,7 @@ JOIN ROOM r
     ON a.room_id = r.room_id
 JOIN ACTUATOR_TYPE at
     ON a.actuator_type_id = at.actuator_type_id
-ORDER BY r.room_id, a.actuator_id;
+ORDER BY r.room_id;
 
 -- =========================================================
 -- 4.전체 센서 측정 기록 조회
@@ -356,7 +373,7 @@ JOIN SENSOR_TYPE st
     ON s.sensor_type_id = st.sensor_type_id
 JOIN ROOM r
     ON s.room_id = r.room_id
-ORDER BY sr.measured_time, r.room_id, s.sensor_id;
+ORDER BY sr.measured_time, r.room_id;
 
 -- =========================================================
 -- 5.센서별 최신 측정값 조회
@@ -381,7 +398,7 @@ WHERE sr.measured_time = (
     FROM SENSOR_READING sr2
     WHERE sr2.sensor_id = sr.sensor_id
 )
-ORDER BY r.room_id, s.sensor_id;
+ORDER BY r.room_id;
 
 -- =========================================================
 -- 6.특정 방의 최신 센서값 조회
@@ -449,7 +466,7 @@ WHERE asl.changed_time = (
     FROM ACTUATOR_STATE_LOG asl2
     WHERE asl2.actuator_id = asl.actuator_id
 )
-ORDER BY r.room_id, a.actuator_id;
+ORDER BY r.room_id;
 
 -- =========================================================
 -- 9.현재 작동 중인 장치 조회
@@ -474,7 +491,7 @@ WHERE asl.changed_time = (
     WHERE asl2.actuator_id = asl.actuator_id
 )
   AND asl.state_value IN ('ON', 'COOLING', 'HEATING', 'OPEN')
-ORDER BY r.room_id, a.actuator_id;
+ORDER BY r.room_id;
 
 -- =========================================================
 -- 10.방별 현재 상태 조회
@@ -581,5 +598,3 @@ WHERE NOT EXISTS (
       AND rr.end_time > '2026-05-04 14:00:00'
 )
 ORDER BY r.room_id;
-
-
